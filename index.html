@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Poker Trainer</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♠</text></svg>">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0e14;--surface:#12181f;--surface2:#1a2230;--border:#252d3a;
+  --text:#e2e8f0;--muted:#64748b;--green:#22c55e;--red:#ef4444;
+  --blue:#3b82f6;--gold:#eab308;--purple:#a855f7;--cyan:#06b6d4;
+  --amber:#f59e0b;
+  --radius:14px;
+}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;min-height:100dvh;-webkit-font-smoothing:antialiased}
+.app{max-width:720px;margin:0 auto;padding:16px;padding-bottom:env(safe-area-inset-bottom,16px)}
+
+/* ---- Header ---- */
+header{text-align:center;padding:24px 0 16px;position:relative}
+header h1{font-size:1.6em;font-weight:900;letter-spacing:-0.02em;color:#fff}
+header h1 span{background:linear-gradient(135deg,var(--amber),var(--red));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.subtitle{color:var(--muted);font-size:0.8em;margin-top:2px}
+
+/* ---- Skill Path ---- */
+.skill-path{margin-bottom:18px}
+.skill-path-label{font-size:0.7em;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;padding-left:2px}
+.path-nodes{display:flex;gap:4px;align-items:center}
+.path-node{
+  flex:1;padding:10px 6px;background:var(--surface);border:2px solid var(--border);
+  border-radius:var(--radius);text-align:center;cursor:pointer;transition:all 0.2s;
+  position:relative;min-width:0;
+}
+.path-node:hover:not(.locked){border-color:var(--blue);transform:translateY(-1px)}
+.path-node.active{border-color:var(--blue);background:rgba(59,130,246,0.08)}
+.path-node.locked{opacity:0.35;cursor:not-allowed}
+.path-node.mastered{border-color:var(--green);background:rgba(34,197,94,0.06)}
+.pn-icon{font-size:1.2em}
+.pn-name{font-size:0.65em;font-weight:700;margin-top:3px;line-height:1.3}
+.pn-status{font-size:0.55em;margin-top:2px;font-weight:600}
+.pn-status.need{color:var(--muted)}
+.pn-status.progress{color:var(--amber)}
+.pn-status.done{color:var(--green)}
+.path-arrow{color:var(--border);font-size:0.8em;flex-shrink:0;width:14px;text-align:center}
+
+/* ---- Mastery ring (small inline) ---- */
+.mastery-ring{
+  width:36px;height:36px;margin:4px auto 2px;position:relative;
+}
+.mastery-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.mastery-ring circle{fill:none;stroke-width:3;stroke-linecap:round}
+.mastery-ring .bg{stroke:var(--border)}
+.mastery-ring .fill{transition:stroke-dashoffset 0.6s ease}
+.mastery-ring .pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:0.5em;font-weight:800}
+
+/* ---- Stats bar ---- */
+.stats-bar{
+  display:flex;justify-content:space-between;gap:8px;padding:12px 16px;
+  background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);
+  margin-bottom:16px;
+}
+.stat{text-align:center;flex:1}
+.stat-val{font-size:1.25em;font-weight:800}
+.stat-lbl{font-size:0.6em;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-top:1px}
+
+/* ---- Game area ---- */
+.game-area{
+  background:var(--surface);border:1px solid var(--border);border-radius:calc(var(--radius) + 4px);
+  padding:24px 20px;min-height:260px;position:relative;overflow:hidden;
+}
+.game-area::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 0%,rgba(59,130,246,0.04),transparent 70%);
+  pointer-events:none;
+}
+
+/* ---- Cards ---- */
+.card{
+  display:inline-flex;flex-direction:column;align-items:center;justify-content:center;
+  width:48px;height:68px;background:#fff;border-radius:10px;
+  font-weight:800;margin:2px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.25),0 0 0 1px rgba(0,0,0,0.08);
+  line-height:1.1;font-size:0.95em;transition:transform 0.15s;
+}
+.card .rank{font-size:1em}
+.card .suit{font-size:0.85em;margin-top:-2px}
+.card.red{color:#dc2626}
+.card.black{color:#1e293b}
+.cards-row{display:flex;justify-content:center;flex-wrap:wrap;gap:5px;margin:8px 0}
+.section-label{
+  text-align:center;font-size:0.65em;font-weight:700;color:var(--muted);
+  text-transform:uppercase;letter-spacing:2px;margin:14px 0 4px;
+}
+.question{text-align:center;font-size:1.1em;font-weight:700;margin:16px 0 10px;line-height:1.3}
+.question small{font-weight:500;color:var(--muted);font-size:0.75em;display:block;margin-top:4px}
+
+/* ---- Buttons / Options ---- */
+.options{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin:12px 0}
+.option-btn{
+  padding:12px 8px;background:var(--surface2);border:2px solid var(--border);
+  border-radius:12px;color:var(--text);cursor:pointer;font-size:0.9em;font-weight:600;
+  transition:all 0.12s;font-family:inherit;
+}
+.option-btn:hover:not(:disabled){border-color:var(--blue);background:rgba(59,130,246,0.06);transform:scale(1.02)}
+.option-btn:active:not(:disabled){transform:scale(0.98)}
+.option-btn:disabled{cursor:default;opacity:0.85}
+.option-btn.correct{border-color:var(--green);background:rgba(34,197,94,0.1)}
+.option-btn.wrong{border-color:var(--red);background:rgba(239,68,68,0.1)}
+
+.hand-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+.hand-option{
+  padding:10px;background:var(--surface2);border:2px solid var(--border);
+  border-radius:12px;cursor:pointer;text-align:center;transition:all 0.12s;
+}
+.hand-option:hover:not(.disabled){border-color:var(--blue);transform:scale(1.01)}
+.hand-option.disabled{cursor:default}
+.hand-option.correct{border-color:var(--green);background:rgba(34,197,94,0.1)}
+.hand-option.wrong{border-color:var(--red);background:rgba(239,68,68,0.1)}
+
+.next-btn{
+  display:block;margin:16px auto 0;padding:10px 32px;
+  background:var(--blue);border:none;border-radius:10px;color:#fff;
+  font-size:0.9em;font-weight:700;cursor:pointer;font-family:inherit;
+  transition:all 0.12s;
+}
+.next-btn:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.next-btn:active{transform:translateY(0)}
+
+.submit-btn{
+  display:block;margin:8px auto;padding:10px 28px;background:var(--blue);
+  border:none;border-radius:10px;color:#fff;font-weight:700;cursor:pointer;font-family:inherit;font-size:0.9em;
+}
+
+/* ---- Explanation ---- */
+.explanation{
+  margin-top:14px;padding:14px 16px;background:var(--surface2);border-radius:12px;
+  border-left:3px solid var(--blue);font-size:0.85em;line-height:1.65;animation:fadeIn 0.3s;
+}
+.explanation strong{color:var(--blue)}
+.tip-box{
+  margin-top:10px;padding:10px 14px;background:rgba(234,179,8,0.06);
+  border:1px solid rgba(234,179,8,0.2);border-radius:10px;font-size:0.8em;color:var(--amber);line-height:1.5;
+}
+
+/* ---- Slider ---- */
+.slider-container{text-align:center;margin:14px 0}
+.slider-container input[type="range"]{
+  width:85%;accent-color:var(--blue);height:6px;-webkit-appearance:none;
+  background:var(--border);border-radius:3px;outline:none;
+}
+.slider-container input[type="range"]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:22px;height:22px;background:var(--blue);border-radius:50%;cursor:pointer;
+}
+.slider-value{font-size:2em;font-weight:900;color:var(--blue);margin:4px 0}
+
+/* ---- Position diagram ---- */
+.position-diagram{display:flex;justify-content:center;gap:5px;flex-wrap:wrap;margin:10px 0}
+.seat{
+  width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:0.6em;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;
+  border:2px solid var(--border);background:var(--surface2);transition:all 0.2s;
+}
+.seat.highlight{border-color:var(--amber);background:rgba(234,179,8,0.1);color:var(--amber);box-shadow:0 0 12px rgba(234,179,8,0.15)}
+
+/* ---- Mastery progress in game ---- */
+.mastery-progress{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:8px 14px;background:var(--surface2);border-radius:10px;margin-bottom:14px;
+  font-size:0.8em;
+}
+.mastery-progress .mp-bar{flex:1;max-width:200px;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.mastery-progress .mp-fill{height:100%;border-radius:3px;transition:width 0.4s}
+.mastery-progress .mp-text{font-weight:700;font-size:0.85em}
+
+/* ---- Popups ---- */
+.toast{
+  position:fixed;top:16px;left:50%;transform:translateX(-50%);
+  padding:8px 20px;border-radius:20px;font-weight:700;font-size:0.95em;z-index:100;
+  pointer-events:none;animation:toastAnim 1.5s forwards;font-family:inherit;
+}
+.toast.xp{background:rgba(34,197,94,0.95);color:#fff}
+.toast.streak{background:rgba(234,179,8,0.95);color:#000}
+@keyframes toastAnim{0%{opacity:1;transform:translateX(-50%) translateY(0)}100%{opacity:0;transform:translateX(-50%) translateY(-40px)}}
+
+.unlock-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,0.75);display:flex;align-items:center;
+  justify-content:center;z-index:200;animation:fadeIn 0.3s;backdrop-filter:blur(4px);
+}
+.unlock-card{
+  background:var(--surface);border:2px solid var(--green);border-radius:20px;
+  padding:32px 40px;text-align:center;animation:popIn 0.4s;max-width:360px;width:90%;
+}
+.unlock-card h2{font-size:1.4em;color:var(--green);margin-bottom:6px}
+.unlock-card .unlock-icon{font-size:2.4em;margin:12px 0}
+.unlock-card p{color:var(--muted);font-size:0.9em;margin-bottom:4px}
+.unlock-card .unlock-name{color:var(--text);font-weight:800;font-size:1.1em}
+.unlock-card button{
+  margin-top:18px;padding:10px 28px;background:var(--green);border:none;border-radius:10px;
+  color:#fff;font-weight:700;cursor:pointer;font-family:inherit;font-size:0.95em;
+}
+
+.mastered-overlay .unlock-card{border-color:var(--gold)}
+.mastered-overlay .unlock-card h2{color:var(--gold)}
+.mastered-overlay .unlock-card button{background:var(--gold)}
+
+@keyframes popIn{0%{transform:scale(0.8);opacity:0}100%{transform:scale(1);opacity:1}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeIn 0.25s}
+
+/* ---- Diff badge ---- */
+.diff-badge{display:inline-block;padding:2px 8px;border-radius:8px;font-size:0.65em;font-weight:700;vertical-align:middle;margin-left:6px}
+.diff-badge.easy{background:rgba(34,197,94,0.12);color:var(--green)}
+.diff-badge.medium{background:rgba(59,130,246,0.12);color:var(--blue)}
+.diff-badge.hard{background:rgba(234,179,8,0.12);color:var(--amber)}
+.diff-badge.expert{background:rgba(239,68,68,0.12);color:var(--red)}
+
+/* ---- Intro ---- */
+.intro{text-align:center;padding:20px 0}
+.intro h2{font-size:1.3em;font-weight:800;margin-bottom:10px}
+.intro p{color:var(--muted);font-size:0.85em;line-height:1.6;max-width:420px;margin:0 auto 16px}
+.start-btn{
+  padding:14px 48px;background:linear-gradient(135deg,var(--amber),var(--red));
+  border:none;border-radius:12px;color:#fff;font-size:1.05em;font-weight:800;cursor:pointer;
+  font-family:inherit;transition:all 0.15s;
+}
+.start-btn:hover{transform:scale(1.04);filter:brightness(1.1)}
+.reset-btn{
+  margin-top:16px;background:none;border:1px solid var(--border);color:var(--muted);
+  padding:8px 18px;border-radius:8px;cursor:pointer;font-size:0.75em;font-family:inherit;
+}
+
+/* ---- Mobile ---- */
+@media(max-width:480px){
+  .app{padding:10px}
+  header{padding:16px 0 10px}
+  header h1{font-size:1.3em}
+  .card{width:40px;height:58px;font-size:0.82em;border-radius:8px}
+  .game-area{padding:16px 14px;border-radius:var(--radius)}
+  .stats-bar{padding:10px 12px;gap:4px}
+  .stat-val{font-size:1.05em}
+  .stat-lbl{font-size:0.55em}
+  .path-node{padding:8px 4px}
+  .pn-icon{font-size:1em}
+  .pn-name{font-size:0.55em}
+  .seat{width:40px;height:40px;font-size:0.5em}
+  .question{font-size:0.95em}
+  .option-btn{padding:10px 6px;font-size:0.85em}
+  .explanation{font-size:0.8em;padding:12px}
+  .unlock-card{padding:24px 20px}
+}
+@media(max-width:360px){
+  .card{width:36px;height:52px;font-size:0.75em}
+  .path-node{padding:6px 2px}
+  .pn-name{font-size:0.5em}
+  .path-arrow{width:8px;font-size:0.6em}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1><span>Poker Trainer</span></h1>
+    <div class="subtitle">Master odds & strategy, one skill at a time</div>
+  </header>
+  <div id="skillPath"></div>
+  <div class="stats-bar" id="statsBar"></div>
+  <div class="game-area" id="gameArea"></div>
+</div>
+
+<script>
+// ===================== CORE DATA =====================
+const SUITS=['♠','♥','♦','♣'],RANKS=['2','3','4','5','6','7','8','9','T','J','Q','K','A'];
+const RV={2:2,3:3,4:4,5:5,6:6,7:7,8:8,9:9,T:10,J:11,Q:12,K:13,A:14};
+const RD={T:'10',J:'J',Q:'Q',K:'K',A:'A'};
+const rand=n=>Math.floor(Math.random()*n);
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=rand(i+1);[a[i],a[j]]=[a[j],a[i]]}return a}
+function makeDeck(){const d=[];for(const s of SUITS)for(const r of RANKS)d.push({rank:r,suit:s});return shuffle(d)}
+function cardHTML(c){const red=c.suit==='♥'||c.suit==='♦';const d=RD[c.rank]||c.rank;return`<div class="card ${red?'red':'black'}"><span class="rank">${d}</span><span class="suit">${c.suit}</span></div>`}
+function cardsHTML(cards){return'<div class="cards-row">'+cards.map(cardHTML).join('')+'</div>'}
+
+// ===================== HAND EVAL =====================
+function evalHand(cards){const cs=getCombos(cards,5);let b=[0];for(const c of cs){const v=eval5(c);if(cmpH(v,b)>0)b=v}return b}
+function getCombos(a,k){if(k===0)return[[]];if(a.length<k)return[];const[f,...r]=a;return[...getCombos(r,k-1).map(c=>[f,...c]),...getCombos(r,k)]}
+function eval5(cards){
+  const ranks=cards.map(c=>RV[c.rank]).sort((a,b)=>b-a),suits=cards.map(c=>c.suit);
+  const flush=suits.every(s=>s===suits[0]);let straight=false,sHi=0;
+  const u=[...new Set(ranks)].sort((a,b)=>b-a);
+  if(u.length>=5){for(let i=0;i<=u.length-5;i++)if(u[i]-u[i+4]===4){straight=true;sHi=u[i];break}
+  if(!straight&&u.includes(14)&&u.includes(5)&&u.includes(4)&&u.includes(3)&&u.includes(2)){straight=true;sHi=5}}
+  const cnt={};for(const r of ranks)cnt[r]=(cnt[r]||0)+1;
+  const g=Object.entries(cnt).map(([r,c])=>({r:+r,c})).sort((a,b)=>b.c-a.c||b.r-a.r);
+  if(flush&&straight)return[9,sHi];
+  if(g[0].c===4)return[8,g[0].r,g[1].r];
+  if(g[0].c===3&&g[1]&&g[1].c>=2)return[7,g[0].r,g[1].r];
+  if(flush)return[6,...ranks];if(straight)return[5,sHi];
+  if(g[0].c===3)return[4,g[0].r,...g.filter(x=>x.c===1).map(x=>x.r)];
+  if(g[0].c===2&&g[1]&&g[1].c===2){const p=g.filter(x=>x.c===2).map(x=>x.r).sort((a,b)=>b-a);return[3,...p,...g.filter(x=>x.c===1).map(x=>x.r)]}
+  if(g[0].c===2)return[2,g[0].r,...g.filter(x=>x.c===1).map(x=>x.r).sort((a,b)=>b-a)];
+  return[1,...ranks];
+}
+function cmpH(a,b){for(let i=0;i<Math.max(a.length,b.length);i++){if((a[i]||0)>(b[i]||0))return 1;if((a[i]||0)<(b[i]||0))return-1}return 0}
+const HN={9:'Straight Flush',8:'Four of a Kind',7:'Full House',6:'Flush',5:'Straight',4:'Three of a Kind',3:'Two Pair',2:'One Pair',1:'High Card'};
+function handName(e){return HN[e[0]]||'High Card'}
+
+// ===================== PROGRESSION: SKILL MASTERY =====================
+/*
+  Each skill has tiers. To unlock the next skill, you must pass the current skill's
+  mastery gate: get N correct out of the last M attempts (a rolling window).
+  Within a skill, harder tiers unlock the same way.
+  This tests DEMONSTRATED ABILITY, not grind volume.
+*/
+const MASTERY_WINDOW = 10; // last N attempts
+const MASTERY_THRESHOLD = 7; // need 7/10 correct
+
+const SKILLS = [
+  { id:'handRank', name:'Hand Rankings', icon:'🃏',
+    tiers:[
+      {name:'Obvious Wins',diff:'easy',desc:'Big category gaps'},
+      {name:'Close Calls',diff:'medium',desc:'Same category, kicker fights'},
+      {name:'Tricky Boards',diff:'hard',desc:'Ties, counterfeits, shared boards'},
+    ]},
+  { id:'outs', name:'Count Outs', icon:'🎯',
+    tiers:[
+      {name:'Basic Draws',diff:'easy',desc:'Flush draws & OESDs'},
+      {name:'Combo Draws',diff:'medium',desc:'Combined & gutshot draws'},
+      {name:'Discount Outs',diff:'hard',desc:'Remove tainted outs'},
+    ]},
+  { id:'potOdds', name:'Pot Odds', icon:'💰',
+    tiers:[
+      {name:'Clear Spots',diff:'easy',desc:'Big +EV or -EV decisions'},
+      {name:'Thin Margins',diff:'medium',desc:'Close call/fold decisions'},
+      {name:'Implied Odds',diff:'hard',desc:'Factor future betting'},
+    ]},
+  { id:'preflop', name:'Preflop', icon:'📊',
+    tiers:[
+      {name:'Premium Hands',diff:'easy',desc:'Obvious raise or fold'},
+      {name:'Positional Play',diff:'medium',desc:'Position-dependent ranges'},
+      {name:'3-Bet & Squeeze',diff:'hard',desc:'Advanced preflop aggression'},
+    ]},
+  { id:'equity', name:'Equity', icon:'📐',
+    tiers:[
+      {name:'Classic Matchups',diff:'medium',desc:'Common preflop equities'},
+      {name:'Tricky Spots',diff:'hard',desc:'Less obvious matchups'},
+      {name:'Board Texture',diff:'expert',desc:'How flops change equity'},
+    ]},
+];
+
+function defaultState(){
+  return{
+    correct:0,total:0,streak:0,bestStreak:0,mode:null,
+    // per-skill: rolling window of last N results (true/false)
+    skills:{},
+  };
+}
+
+function save(){localStorage.setItem('pokerTrainer2',JSON.stringify(state))}
+function load(){try{const d=JSON.parse(localStorage.getItem('pokerTrainer2'));if(d&&d.skills)return d}catch(e){}return null}
+let state=load()||defaultState();
+
+// --- Skill state helpers ---
+function getSkillState(id){
+  if(!state.skills[id]) state.skills[id]={history:[],tierHistory:[[],[],[]]};
+  const s=state.skills[id];
+  if(!s.tierHistory)s.tierHistory=[[],[],[]];
+  return s;
+}
+
+function rollingScore(arr){
+  const recent=arr.slice(-MASTERY_WINDOW);
+  return recent.filter(Boolean).length;
+}
+
+function isMastered(arr){
+  if(arr.length<MASTERY_WINDOW) return false;
+  return rollingScore(arr)>=MASTERY_THRESHOLD;
+}
+
+function isSkillUnlocked(idx){
+  if(idx===0)return true;
+  // previous skill's overall history must be mastered
+  const prev=SKILLS[idx-1];
+  const ps=getSkillState(prev.id);
+  return isMastered(ps.history);
+}
+
+function getSkillTier(id){
+  const s=getSkillState(id);
+  // tier 0 always available; tier N requires mastery of tier N-1
+  let tier=0;
+  for(let i=0;i<s.tierHistory.length-1;i++){
+    if(isMastered(s.tierHistory[i]))tier=i+1;
+    else break;
+  }
+  return tier;
+}
+
+function getSkillStatus(idx){
+  if(!isSkillUnlocked(idx))return'locked';
+  const sk=SKILLS[idx];
+  const s=getSkillState(sk.id);
+  if(isMastered(s.history))return'mastered';
+  if(s.history.length>0)return'progress';
+  return'unlocked';
+}
+
+function recordAnswer(correct,skillId){
+  state.total++;
+  if(correct){state.correct++;state.streak++}else{state.streak=0}
+  if(state.streak>state.bestStreak)state.bestStreak=state.streak;
+
+  const s=getSkillState(skillId);
+  const tier=getSkillTier(skillId);
+  s.history.push(correct);
+  s.tierHistory[tier].push(correct);
+
+  // Check if skill just got mastered (unlocking next)
+  const skillIdx=SKILLS.findIndex(sk=>sk.id===skillId);
+  const wasMastered=s.history.length>MASTERY_WINDOW&&isMastered(s.history.slice(0,-1));
+  const nowMastered=isMastered(s.history);
+
+  save();
+  renderStatsBar();
+  renderSkillPath();
+
+  if(correct&&state.streak>=3){
+    showToast(`${state.streak} streak!`,'streak');
+  }
+
+  if(!wasMastered&&nowMastered&&skillIdx<SKILLS.length-1){
+    const next=SKILLS[skillIdx+1];
+    setTimeout(()=>showUnlock(next),500);
+  }
+
+  // Check tier advancement
+  const wasTierMastered=s.tierHistory[tier].length>MASTERY_WINDOW&&isMastered(s.tierHistory[tier].slice(0,-1));
+  const nowTierMastered=isMastered(s.tierHistory[tier]);
+  if(!wasTierMastered&&nowTierMastered&&tier<2){
+    const nextTier=SKILLS[skillIdx].tiers[tier+1];
+    setTimeout(()=>showToast(`New difficulty: ${nextTier.name}!`,'xp'),300);
+  }
+}
+
+// ===================== UI =====================
+function showToast(msg,type){
+  const el=document.createElement('div');
+  el.className=`toast ${type}`;el.textContent=msg;
+  document.body.appendChild(el);setTimeout(()=>el.remove(),1600);
+}
+
+function showUnlock(skill){
+  const ov=document.createElement('div');
+  ov.className='unlock-overlay';
+  ov.innerHTML=`<div class="unlock-card"><h2>Skill Unlocked!</h2>
+    <div class="unlock-icon">${skill.icon}</div>
+    <div class="unlock-name">${skill.name}</div>
+    <p>${skill.tiers[0].desc}</p>
+    <button onclick="this.closest('.unlock-overlay').remove();setMode('${skill.id}')">Start Training</button>
+  </div>`;
+  document.body.appendChild(ov);
+}
+
+function renderStatsBar(){
+  const acc=state.total?Math.round(state.correct/state.total*100)+'%':'-';
+  document.getElementById('statsBar').innerHTML=`
+    <div class="stat"><div class="stat-val" style="color:var(--green)">${state.correct}</div><div class="stat-lbl">Correct</div></div>
+    <div class="stat"><div class="stat-val">${state.total}</div><div class="stat-lbl">Total</div></div>
+    <div class="stat"><div class="stat-val" style="color:var(--amber)">${state.streak}${state.streak>=3?'🔥':''}</div><div class="stat-lbl">Streak</div></div>
+    <div class="stat"><div class="stat-val" style="color:var(--blue)">${acc}</div><div class="stat-lbl">Accuracy</div></div>`;
+}
+
+function masteryRingHTML(arr){
+  const score=rollingScore(arr);
+  const total=Math.max(arr.length,1);
+  const pct=arr.length<MASTERY_WINDOW
+    ? Math.min(score/MASTERY_THRESHOLD,1)
+    : score/MASTERY_WINDOW;
+  const r=14,circ=2*Math.PI*r;
+  const offset=circ*(1-pct);
+  const color=pct>=MASTERY_THRESHOLD/MASTERY_WINDOW?'var(--green)':pct>0.4?'var(--amber)':'var(--muted)';
+  return`<div class="mastery-ring"><svg viewBox="0 0 36 36"><circle class="bg" cx="18" cy="18" r="${r}"/><circle class="fill" cx="18" cy="18" r="${r}" stroke="${color}" stroke-dasharray="${circ}" stroke-dashoffset="${offset}"/></svg><div class="pct" style="color:${color}">${score}</div></div>`;
+}
+
+function renderSkillPath(){
+  let html='<div class="skill-path"><div class="skill-path-label">Skill Track — master each to unlock the next</div><div class="path-nodes">';
+  SKILLS.forEach((sk,i)=>{
+    const status=getSkillStatus(i);
+    const s=getSkillState(sk.id);
+    const active=state.mode===sk.id;
+    let statusHTML='',cls=status;
+    if(active)cls='active';
+
+    if(status==='locked'){
+      statusHTML=`<div class="pn-status need">🔒 Locked</div>`;
+    }else if(status==='mastered'){
+      statusHTML=`<div class="pn-status done">✓ Mastered</div>`;
+    }else{
+      const score=rollingScore(s.history);
+      const need=Math.max(0,MASTERY_THRESHOLD-score);
+      statusHTML=need>0
+        ?`<div class="pn-status progress">${score}/${MASTERY_WINDOW}</div>`
+        :`<div class="pn-status done">✓ Mastered</div>`;
+    }
+
+    if(i>0)html+=`<div class="path-arrow">›</div>`;
+    html+=`<div class="path-node ${cls}" onclick="${status!=='locked'?`setMode('${sk.id}')`:''}">
+      <div class="pn-icon">${sk.icon}</div>
+      <div class="pn-name">${sk.name}</div>
+      ${status!=='locked'?masteryRingHTML(s.history):''}
+      ${statusHTML}
+    </div>`;
+  });
+  html+='</div></div>';
+  document.getElementById('skillPath').innerHTML=html;
+}
+
+function masteryBarHTML(skillId){
+  const s=getSkillState(skillId);
+  const tier=getSkillTier(skillId);
+  const tierArr=s.tierHistory[tier];
+  const score=rollingScore(tierArr);
+  const pct=tierArr.length<MASTERY_WINDOW
+    ?Math.min((score/MASTERY_THRESHOLD)*100,100)
+    :(score/MASTERY_WINDOW)*100;
+  const tierInfo=SKILLS.find(sk=>sk.id===skillId).tiers[tier];
+  const color=pct>=70?'var(--green)':pct>=40?'var(--amber)':'var(--muted)';
+  const overall=rollingScore(s.history);
+  return`<div class="mastery-progress">
+    <span class="diff-badge ${tierInfo.diff}">${tierInfo.name}</span>
+    <div class="mp-bar"><div class="mp-fill" style="width:${pct}%;background:${color}"></div></div>
+    <span class="mp-text" style="color:${color}">${score}/${MASTERY_WINDOW}</span>
+    <span style="color:var(--muted);font-size:0.7em">Overall ${overall}/${MASTERY_WINDOW}</span>
+  </div>`;
+}
+
+// ===================== HAND RANKINGS =====================
+function genHandRank(){
+  const tier=getSkillTier('handRank');
+  let board,hand1,hand2,e1,e2;
+
+  if(tier===0){
+    let att=0;
+    do{const d=makeDeck();board=d.splice(0,5);hand1=d.splice(0,2);hand2=d.splice(0,2);
+      e1=evalHand([...hand1,...board]);e2=evalHand([...hand2,...board]);att++}
+    while(e1[0]===e2[0]&&att<60);
+  }else if(tier===1){
+    // Try for same category
+    let best=null;
+    for(let i=0;i<40;i++){const d=makeDeck();const b=d.splice(0,5);const h1=d.splice(0,2);const h2=d.splice(0,2);
+      const ev1=evalHand([...h1,...b]),ev2=evalHand([...h2,...b]);const diff=Math.abs(ev1[0]-ev2[0]);
+      if(diff===0){board=b;hand1=h1;hand2=h2;e1=ev1;e2=ev2;break}
+      if(!best||diff<best.diff)best={b,h1,h2,ev1,ev2,diff}}
+    if(!board){board=best.b;hand1=best.h1;hand2=best.h2;e1=best.ev1;e2=best.ev2}
+  }else{
+    let best=null;
+    for(let i=0;i<40;i++){const d=makeDeck();const b=d.splice(0,5);const h1=d.splice(0,2);const h2=d.splice(0,2);
+      const ev1=evalHand([...h1,...b]),ev2=evalHand([...h2,...b]);
+      if(cmpH(ev1,ev2)===0){board=b;hand1=h1;hand2=h2;e1=ev1;e2=ev2;break}
+      const diff=Math.abs(ev1[0]-ev2[0]);if(!best||diff<best.diff)best={b,h1,h2,ev1,ev2,diff}}
+    if(!board){board=best.b;hand1=best.h1;hand2=best.h2;e1=best.ev1;e2=best.ev2}
+  }
+
+  const cmp=cmpH(e1,e2),correctIdx=cmp>0?0:cmp<0?1:2;
+  const area=document.getElementById('gameArea');
+  area.innerHTML=`<div class="fade-in">${masteryBarHTML('handRank')}
+    <div class="section-label">Community Cards</div>${cardsHTML(board)}
+    <div class="hand-grid">
+      <div class="hand-option" onclick="answerHR(0)" id="ho0"><div class="section-label">Player 1</div>${cardsHTML(hand1)}</div>
+      <div class="hand-option" onclick="answerHR(1)" id="ho1"><div class="section-label">Player 2</div>${cardsHTML(hand2)}</div>
+    </div>
+    <div style="text-align:center"><button class="option-btn" onclick="answerHR(2)" id="ho2" style="max-width:160px;margin:0 auto;font-size:0.8em">Tie / Split</button></div>
+    <div class="question">Which hand wins?</div>
+    <div id="feedback"></div></div>`;
+  window._q={correctIdx,n1:handName(e1),n2:handName(e2)};
+}
+window.answerHR=function(idx){
+  const{correctIdx,n1,n2}=window._q;const correct=idx===correctIdx;
+  recordAnswer(correct,'handRank');
+  document.querySelectorAll('.hand-option,#ho2').forEach((el,i)=>{el.classList.add('disabled');el.onclick=null;if(i===correctIdx)el.classList.add('correct');if(i===idx&&!correct)el.classList.add('wrong')});
+  const w=correctIdx===2?'Split pot!':correctIdx===0?'Player 1':'Player 2';
+  document.getElementById('feedback').innerHTML=`<div class="explanation"><strong>${correct?'Correct!':'Wrong!'}</strong> ${w}<br>P1: <strong>${n1}</strong> &nbsp;·&nbsp; P2: <strong>${n2}</strong></div><button class="next-btn" onclick="genHandRank()">Next →</button>`;
+};
+
+// ===================== OUTS =====================
+function makeFlushDraw(d){const s=SUITS[rand(4)];const su=shuffle(d.filter(c=>c.suit===s));const of=shuffle(d.filter(c=>c.suit!==s));return{hand:[su[0],su[1]],board:[su[2],su[3],of[0]],outs:9,explain:'13 suited − 4 showing = 9 flush outs.',name:'Flush Draw'}}
+function makeOESD(d){const st=3+rand(8);const picks=[st,st+1,st+2,st+3].map(rv=>d.find(c=>c.rank===RANKS[rv-2]));shuffle(picks);const rem=shuffle(d.filter(c=>!picks.includes(c)));return{hand:[picks[0],picks[1]],board:[picks[2],picks[3],rem[0]],outs:8,explain:'4 cards on each end = 8 straight outs.',name:'Open-Ended Straight Draw'}}
+function makeGutshot(d){const st=3+rand(8);const picks=[st,st+1,st+3,st+4].map(rv=>d.find(c=>c.rank===RANKS[rv-2]));shuffle(picks);const rem=shuffle(d.filter(c=>!picks.includes(c)));return{hand:[picks[0],picks[1]],board:[picks[2],picks[3],rem[0]],outs:4,explain:'Only 4 cards fill the gap = 4 gutshot outs.',name:'Gutshot Straight'}}
+function makeOvercards(d){const hi=shuffle(d.filter(c=>RV[c.rank]>=13));const lo=shuffle(d.filter(c=>RV[c.rank]<=10));return{hand:[hi[0],hi[1]],board:[lo[0],lo[1],lo[2]],outs:6,explain:'2 overcards × 3 outs each = 6 outs.',name:'Two Overcards'}}
+function makeComboDraw(d){const s=SUITS[rand(4)];const su=shuffle(d.filter(c=>c.suit===s));const of=shuffle(d.filter(c=>c.suit!==s));return{hand:[su[0],su[1]],board:[su[2],su[3],of[0]],outs:12,explain:'9 flush + 3 pair/trips ≈ 12 combined outs.',name:'Flush + Pair Draw'}}
+function makeDiscountOuts(d){const s=SUITS[rand(4)];const su=shuffle(d.filter(c=>c.suit===s));const of=shuffle(d.filter(c=>c.suit!==s));return{hand:[su[0],su[1]],board:[su[2],su[3],of[0]],outs:7,explain:'9 flush − ~2 tainted outs (give villain better hand) ≈ 7 clean outs.',name:'Discounted Flush'}}
+
+function genOuts(){
+  const tier=getSkillTier('outs');const deck=makeDeck();
+  const pools=[[makeFlushDraw,makeOESD],[makeFlushDraw,makeOESD,makeGutshot,makeOvercards,makeComboDraw],[makeGutshot,makeComboDraw,makeDiscountOuts,makeOvercards]];
+  const sc=pools[tier][rand(pools[tier].length)](deck);
+  const area=document.getElementById('gameArea');
+  area.innerHTML=`<div class="fade-in">${masteryBarHTML('outs')}
+    <div class="section-label">Your Hand</div>${cardsHTML(sc.hand)}
+    <div class="section-label">Flop</div>${cardsHTML(sc.board)}
+    <div class="question">How many outs?<br><small>${sc.name}</small></div>
+    <div class="slider-container"><div class="slider-value" id="sv">8</div>
+    <input type="range" min="1" max="20" value="8" oninput="document.getElementById('sv').textContent=this.value"></div>
+    <button class="submit-btn" onclick="answerOuts()">Submit</button>
+    <div id="feedback"></div></div>`;
+  window._q={outs:sc.outs,explain:sc.explain};
+}
+window.answerOuts=function(){
+  const{outs,explain}=window._q;const g=+document.getElementById('sv').value;const d=Math.abs(g-outs);const correct=d<=1;
+  recordAnswer(correct,'outs');document.querySelector('.submit-btn').style.display='none';
+  document.getElementById('feedback').innerHTML=`<div class="explanation"><strong>${correct?(d===0?'Exact!':'Close enough!'):'Not quite.'}</strong> Answer: <strong>${outs} outs</strong> (you: ${g})<br>${explain}<br><br><strong>Rule of 2 & 4:</strong> Flop ×4 ≈ ${outs*4}% by river · Turn ×2 ≈ ${outs*2}% next card</div><button class="next-btn" onclick="genOuts()">Next →</button>`;
+};
+
+// ===================== POT ODDS =====================
+function genPotOdds(){
+  const tier=getSkillTier('potOdds');const deck=makeDeck();
+  let pot,bet;
+  if(tier===0){pot=(3+rand(8))*10;bet=(1+rand(3))*5}
+  else if(tier===1){pot=(2+rand(15))*5;bet=(2+rand(8))*5}
+  else{pot=(2+rand(10))*5;bet=(3+rand(10))*5}
+
+  const pools=tier===0?[makeFlushDraw,makeOESD]:[makeFlushDraw,makeOESD,makeGutshot,makeOvercards];
+  const sc=pools[rand(pools.length)](deck);
+  const totalPot=pot+bet,callAmt=bet,potOdds=(callAmt/(totalPot+callAmt))*100;
+  const equity=Math.min(sc.outs*4,60);
+  let shouldCall,impliedNote='';
+  if(tier===2){const imp=(2+rand(6))*10;const eff=(callAmt/(totalPot+callAmt+imp))*100;shouldCall=equity>eff;impliedNote=`<br><strong>Implied odds:</strong> Expect ~$${imp} more → effective needed ${eff.toFixed(1)}%.`}
+  else{shouldCall=equity>potOdds}
+
+  const area=document.getElementById('gameArea');
+  area.innerHTML=`<div class="fade-in">${masteryBarHTML('potOdds')}
+    <div class="section-label">Your Hand</div>${cardsHTML(sc.hand)}
+    <div class="section-label">Flop</div>${cardsHTML(sc.board)}
+    <div style="text-align:center;margin:12px 0"><span style="font-size:1.2em">Pot: <strong>$${pot}</strong></span>&nbsp;&nbsp;<span style="font-size:1.2em;color:var(--red)">Bet: <strong>$${bet}</strong></span></div>
+    <div class="question">Should you call $${bet}?<br><small>${sc.name} · ~${sc.outs} outs</small></div>
+    <div class="options" style="max-width:280px;margin:10px auto">
+      <button class="option-btn" onclick="answerPO(true)">Call</button>
+      <button class="option-btn" onclick="answerPO(false)">Fold</button>
+    </div><div id="feedback"></div></div>`;
+  window._q={shouldCall,potOdds,equity,outs:sc.outs,callAmt,totalPot,impliedNote};
+}
+window.answerPO=function(called){
+  const{shouldCall,potOdds,equity,outs,callAmt,totalPot,impliedNote}=window._q;const correct=called===shouldCall;
+  recordAnswer(correct,'potOdds');document.querySelectorAll('.option-btn').forEach(b=>b.disabled=true);
+  document.getElementById('feedback').innerHTML=`<div class="explanation"><strong>${correct?'Correct!':'Wrong!'}</strong> You should <strong>${shouldCall?'CALL':'FOLD'}</strong>.<br><br><strong>Pot odds:</strong> $${callAmt} to win $${totalPot} = ${potOdds.toFixed(1)}% needed<br><strong>Equity:</strong> ~${outs} × 4 = ~${equity}%${impliedNote}<br><br>${equity>potOdds?'Equity > pot odds → +EV call.':'Equity < pot odds → fold.'}</div><button class="next-btn" onclick="genPotOdds()">Next →</button>`;
+};
+
+// ===================== PREFLOP =====================
+const POS=['UTG','UTG+1','MP','CO','BTN','SB','BB'];
+function preflopAction(hand,pos,tier){
+  const r1=RV[hand[0].rank],r2=RV[hand[1].rank],hi=Math.max(r1,r2),lo=Math.min(r1,r2);
+  const suited=hand[0].suit===hand[1].suit,pair=r1===r2,pi=POS.indexOf(pos),late=pi>=3;
+  if(pair&&hi>=12)return{action:'Raise',cat:'Premium',why:`Pocket ${hi===14?'Aces':hi===13?'Kings':'Queens'} — always raise.`};
+  if(hi===14&&lo===13)return{action:'Raise',cat:'Premium',why:'AK — premium, always raise.'};
+  if(pair&&hi>=10)return{action:'Raise',cat:'Strong',why:'JJ/TT — raise from any seat.'};
+  if(hi===14&&lo>=12&&suited)return{action:'Raise',cat:'Strong',why:'AQs/AKs — raise.'};
+  if(hi===14&&lo>=11)return{action:'Raise',cat:'Strong',why:'AJ+ — strong enough to open.'};
+  if(tier===0){
+    if(pair&&hi>=7)return{action:'Raise',cat:'Medium',why:'Medium+ pair — raise.'};
+    if(hi>=13&&lo>=10&&suited)return{action:'Raise',cat:'Medium',why:'Suited broadway — raise.'};
+    return{action:'Fold',cat:'Weak',why:'Not strong enough. Patience wins!'};
+  }
+  if(pair&&hi>=7)return late?{action:'Raise',cat:'Medium',why:'Medium pair in position — raise.'}:{action:'Call',cat:'Medium',why:'Medium pair early — call to set-mine.'};
+  if(suited&&hi===14)return late?{action:'Raise',cat:'Medium',why:'Suited ace in position — raise.'}:{action:'Call',cat:'Medium',why:'Suited ace — call for flush potential.'};
+  if(suited&&hi>=12&&lo>=10)return late?{action:'Raise',cat:'Medium',why:'Suited broadway in position.'}:{action:'Call',cat:'Marginal',why:'Suited broadway early — call.'};
+  if(pair)return late?{action:'Call',cat:'Speculative',why:'Small pair in position — call to set-mine.'}:{action:'Fold',cat:'Weak',why:'Small pair OOP — fold.'};
+  if(suited&&Math.abs(hi-lo)<=2&&lo>=6)return late?{action:'Call',cat:'Speculative',why:'Suited connector in position.'}:{action:'Fold',cat:'Weak',why:'Suited connector OOP — fold.'};
+  if(tier>=2&&late&&hi>=14&&suited)return{action:'Raise',cat:'3-Bet',why:'Late position suited ace — great 3-bet candidate.'};
+  if(hi>=13&&lo>=9&&late)return{action:'Call',cat:'Marginal',why:'Decent high cards in position.'};
+  return{action:'Fold',cat:'Weak',why:'Too weak to play here.'};
+}
+function genPreflop(){
+  const tier=getSkillTier('preflop');const deck=makeDeck();
+  const hand=[deck[0],deck[1]];const pos=POS[rand(POS.length)];const rec=preflopAction(hand,pos,tier);
+  const area=document.getElementById('gameArea');
+  area.innerHTML=`<div class="fade-in">${masteryBarHTML('preflop')}
+    <div class="position-diagram">${POS.map(p=>`<div class="seat ${p===pos?'highlight':''}">${p}</div>`).join('')}</div>
+    <div class="section-label">Position: ${pos} ${pos==='BTN'||pos==='CO'?'(Late)':pos==='UTG'||pos==='UTG+1'?'(Early)':''}</div>
+    <div class="section-label" style="margin-top:10px">Your Hand</div>${cardsHTML(hand)}
+    <div style="text-align:center;font-size:0.75em;color:${hand[0].suit===hand[1].suit?'var(--blue)':'var(--muted)'}">${hand[0].suit===hand[1].suit?'Suited':'Offsuit'}</div>
+    <div class="question">What's your move?</div>
+    <div class="options" style="max-width:360px;margin:10px auto">
+      <button class="option-btn" onclick="answerPF('Raise')">Raise</button>
+      <button class="option-btn" onclick="answerPF('Call')">Call</button>
+      <button class="option-btn" onclick="answerPF('Fold')">Fold</button>
+    </div><div id="feedback"></div></div>`;
+  window._q={rec};
+}
+window.answerPF=function(a){
+  const{rec}=window._q;const correct=a===rec.action;
+  const close=(a==='Raise'&&rec.action==='Call')||(a==='Call'&&rec.action==='Raise');
+  recordAnswer(correct||close,'preflop');
+  document.querySelectorAll('.option-btn').forEach(b=>{b.disabled=true;if(b.textContent===rec.action)b.classList.add('correct');if(b.textContent===a&&!correct&&!close)b.classList.add('wrong')});
+  document.getElementById('feedback').innerHTML=`<div class="explanation"><strong>${correct?'Correct!':close?'Acceptable!':'Wrong!'}</strong> Best: <strong>${rec.action}</strong> (${rec.cat})<br>${rec.why}${close?'<br><em>Both raise and call work here.</em>':''}</div>${!correct&&!close?'<div class="tip-box">Position is power! Late seats (CO, BTN) can play more hands.</div>':''}<button class="next-btn" onclick="genPreflop()">Next →</button>`;
+};
+
+// ===================== EQUITY QUIZ =====================
+const EQ_MATCHUPS=[
+  {h1:'AA',h2:'KK',eq:82,explain:'Aces vs Kings ≈ 82/18 — the classic cooler.'},
+  {h1:'AKs',h2:'QQ',eq:46,explain:'AKs vs QQ ≈ 46/54 — a coin flip. AK needs to hit.'},
+  {h1:'AKo',h2:'72o',eq:67,explain:'AK dominates 72o ≈ 67/33.'},
+  {h1:'JJ',h2:'AKo',eq:57,explain:'JJ vs AKo ≈ 57/43 — the classic race.'},
+  {h1:'QQ',h2:'AKs',eq:54,explain:'QQ vs AKs ≈ 54/46 — slight pair edge.'},
+  {h1:'AA',h2:'JTs',eq:77,explain:'AA vs suited connector ≈ 77/23.'},
+  {h1:'88',h2:'AQo',eq:55,explain:'Mid pair vs two overs ≈ 55/45.'},
+  {h1:'KQs',h2:'A5o',eq:48,explain:'KQs vs A5o ≈ 48/52 — ace gives small edge.'},
+  {h1:'AJs',h2:'KQo',eq:60,explain:'AJs vs KQo ≈ 60/40 — domination.'},
+  {h1:'99',h2:'66',eq:81,explain:'Overpair vs underpair ≈ 81/19.'},
+  {h1:'AKs',h2:'JTs',eq:61,explain:'AKs vs JTs ≈ 61/39.'},
+  {h1:'TT',h2:'AKs',eq:54,explain:'TT vs AKs ≈ 54/46 — classic race.'},
+];
+function genEquity(){
+  const tier=getSkillTier('equity');
+  const mu=EQ_MATCHUPS[rand(EQ_MATCHUPS.length)];
+  const tol=tier===0?12:tier===1?8:5;
+  const area=document.getElementById('gameArea');
+  area.innerHTML=`<div class="fade-in">${masteryBarHTML('equity')}
+    <div style="display:flex;justify-content:center;gap:30px;margin:18px 0;flex-wrap:wrap">
+      <div style="text-align:center"><div class="section-label">Hand 1</div><div style="font-size:1.6em;font-weight:900;margin:6px 0">${mu.h1}</div></div>
+      <div style="align-self:center;color:var(--muted);font-weight:800;font-size:1.1em">vs</div>
+      <div style="text-align:center"><div class="section-label">Hand 2</div><div style="font-size:1.6em;font-weight:900;margin:6px 0">${mu.h2}</div></div>
+    </div>
+    <div class="question">Hand 1's equity?<br><small>Within ±${tol}% counts as correct</small></div>
+    <div class="slider-container"><div class="slider-value" id="eqV">50</div><span style="color:var(--muted);font-size:0.75em">%</span>
+    <input type="range" min="10" max="95" value="50" oninput="document.getElementById('eqV').textContent=this.value"></div>
+    <button class="submit-btn" onclick="answerEQ()">Submit</button>
+    <div id="feedback"></div></div>`;
+  window._q={eq:mu.eq,explain:mu.explain,tol,h1:mu.h1,h2:mu.h2};
+}
+window.answerEQ=function(){
+  const{eq,explain,tol}=window._q;const g=+document.getElementById('eqV').value;const d=Math.abs(g-eq);const correct=d<=tol;
+  recordAnswer(correct,'equity');document.querySelector('.submit-btn').style.display='none';
+  const acc=d===0?'Spot on!':d<=5?'Excellent!':correct?'Close enough!':'Off the mark.';
+  document.getElementById('feedback').innerHTML=`<div class="explanation"><strong>${acc}</strong> Answer: <strong>${eq}%</strong> (you: ${g}%, off by ${d})<br>${explain}
+    <div class="tip-box">Key rules: Pair vs overs ≈ 55/45 · Pair vs underpair ≈ 80/20 · Domination ≈ 70/30 · Suited adds ~3%</div></div>
+    <button class="next-btn" onclick="genEquity()">Next →</button>`;
+};
+
+// ===================== NAV =====================
+function showIntro(){
+  document.getElementById('gameArea').innerHTML=`<div class="intro fade-in">
+    <h2>Learn Poker by Doing</h2>
+    <p>Each skill unlocks when you <strong>prove mastery</strong> of the previous one.
+    Get ${MASTERY_THRESHOLD}/${MASTERY_WINDOW} correct in your recent attempts to advance.</p>
+    <p style="color:var(--amber);font-size:0.8em">No grinding — just skill.</p>
+    <button class="start-btn" onclick="setMode('handRank')">Start Training</button>
+    <br><button class="reset-btn" onclick="if(confirm('Reset all progress?')){localStorage.removeItem('pokerTrainer2');location.reload()}">Reset Progress</button>
+  </div>`;
+}
+
+function setMode(mode){
+  const idx=SKILLS.findIndex(s=>s.id===mode);
+  if(!isSkillUnlocked(idx))return;
+  state.mode=mode;save();renderSkillPath();
+  ({handRank:genHandRank,outs:genOuts,potOdds:genPotOdds,preflop:genPreflop,equity:genEquity})[mode]();
+}
+
+// ===================== INIT =====================
+renderStatsBar();renderSkillPath();
+if(state.mode){const idx=SKILLS.findIndex(s=>s.id===state.mode);if(isSkillUnlocked(idx))setMode(state.mode);else showIntro();}
+else showIntro();
+</script>
+</body>
+</html>
