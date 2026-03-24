@@ -114,8 +114,8 @@ header h1 span{background:linear-gradient(135deg,var(--amber),var(--red));-webki
   padding:10px;background:var(--surface2);border:2px solid var(--border);
   border-radius:12px;cursor:pointer;text-align:center;transition:all 0.12s;
 }
-.hand-option:hover:not(.disabled){border-color:var(--blue);transform:scale(1.01)}
-.hand-option.disabled{cursor:default}
+.hand-option:hover:not(.disabled){border-color:var(--blue);transform:scale(1.02);box-shadow:0 0 16px rgba(59,130,246,0.12)}
+.hand-option.disabled{cursor:default;pointer-events:none}
 .hand-option.correct{border-color:var(--green);background:rgba(34,197,94,0.1)}
 .hand-option.wrong{border-color:var(--red);background:rgba(239,68,68,0.1)}
 
@@ -147,11 +147,12 @@ header h1 span{background:linear-gradient(135deg,var(--amber),var(--red));-webki
 /* ---- Slider ---- */
 .slider-container{text-align:center;margin:14px 0}
 .slider-container input[type="range"]{
-  width:85%;accent-color:var(--blue);height:6px;-webkit-appearance:none;
-  background:var(--border);border-radius:3px;outline:none;
+  width:85%;accent-color:var(--blue);height:8px;-webkit-appearance:none;
+  background:var(--border);border-radius:4px;outline:none;
 }
 .slider-container input[type="range"]::-webkit-slider-thumb{
-  -webkit-appearance:none;width:22px;height:22px;background:var(--blue);border-radius:50%;cursor:pointer;
+  -webkit-appearance:none;width:28px;height:28px;background:var(--blue);border-radius:50%;cursor:pointer;
+  box-shadow:0 2px 8px rgba(59,130,246,0.4);
 }
 .slider-value{font-size:2em;font-weight:900;color:var(--blue);margin:4px 0}
 
@@ -241,25 +242,26 @@ header h1 span{background:linear-gradient(135deg,var(--amber),var(--red));-webki
   .app{padding:10px}
   header{padding:16px 0 10px}
   header h1{font-size:1.3em}
-  .card{width:40px;height:58px;font-size:0.82em;border-radius:8px}
+  .card{width:42px;height:60px;font-size:0.85em;border-radius:8px}
   .game-area{padding:16px 14px;border-radius:var(--radius)}
   .stats-bar{padding:10px 12px;gap:4px}
   .stat-val{font-size:1.05em}
   .stat-lbl{font-size:0.55em}
-  .path-node{padding:8px 4px}
-  .pn-icon{font-size:1em}
-  .pn-name{font-size:0.55em}
-  .seat{width:40px;height:40px;font-size:0.5em}
+  .path-nodes{overflow-x:auto;-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory;padding-bottom:4px}
+  .path-node{min-width:80px;flex:0 0 auto;scroll-snap-align:start;padding:8px 6px}
+  .pn-icon{font-size:1.1em}
+  .pn-name{font-size:0.6em}
+  .seat{width:42px;height:42px;font-size:0.55em}
   .question{font-size:0.95em}
-  .option-btn{padding:10px 6px;font-size:0.85em}
+  .option-btn{padding:10px 8px;font-size:0.85em}
   .explanation{font-size:0.8em;padding:12px}
   .unlock-card{padding:24px 20px}
 }
 @media(max-width:360px){
-  .card{width:36px;height:52px;font-size:0.75em}
-  .path-node{padding:6px 2px}
-  .pn-name{font-size:0.5em}
-  .path-arrow{width:8px;font-size:0.6em}
+  .card{width:38px;height:54px;font-size:0.78em}
+  .path-node{min-width:72px;padding:6px 4px}
+  .pn-name{font-size:0.55em}
+  .path-arrow{width:10px;font-size:0.7em}
 }
 </style>
 </head>
@@ -618,7 +620,7 @@ function genOuts(){
   window._q={outs:sc.outs,explain:sc.explain};
 }
 window.answerOuts=function(){
-  const{outs,explain}=window._q;const g=+document.getElementById('sv').value;const d=Math.abs(g-outs);const correct=d<=1;
+  const{outs,explain}=window._q;const g=+document.getElementById('sv').textContent;const d=Math.abs(g-outs);const correct=d<=1;
   recordAnswer(correct,'outs');document.querySelector('.submit-btn').style.display='none';
   document.getElementById('feedback').innerHTML=`<div class="explanation"><strong>${correct?(d===0?'Exact!':'Close enough!'):'Not quite.'}</strong> Answer: <strong>${outs} outs</strong> (you: ${g})<br>${explain}<br><br><strong>Rule of 2 & 4:</strong> On the flop, multiply outs ×4 ≈ ${outs*4}% equity by the river. On the turn, ×2 ≈ ${outs*2}%. If you have 0 outs, you\'re "drawing dead."</div><button class="next-btn" onclick="genOuts()">Next →</button>`;
 };
@@ -691,7 +693,7 @@ function genPreflop(){
     <div class="section-label" style="margin-top:10px">Your Hand</div>${cardsHTML(hand)}
     <div style="text-align:center;font-size:0.75em;color:${hand[0].suit===hand[1].suit?'var(--blue)':'var(--muted)'}">${hand[0].suit===hand[1].suit?'Suited':'Offsuit'}</div>
     <div class="question">What's your move?</div>
-    <div class="options" style="max-width:360px;margin:10px auto">
+    <div class="options" style="max-width:360px;margin:10px auto;grid-template-columns:repeat(3,1fr)">
       <button class="option-btn" onclick="answerPF('Raise')">Raise</button>
       <button class="option-btn" onclick="answerPF('Call')">Call</button>
       <button class="option-btn" onclick="answerPF('Fold')">Fold</button>
@@ -740,7 +742,7 @@ function genEquity(){
   window._q={eq:mu.eq,explain:mu.explain,tol,h1:mu.h1,h2:mu.h2};
 }
 window.answerEQ=function(){
-  const{eq,explain,tol}=window._q;const g=+document.getElementById('eqV').value;const d=Math.abs(g-eq);const correct=d<=tol;
+  const{eq,explain,tol}=window._q;const g=+document.getElementById('eqV').textContent;const d=Math.abs(g-eq);const correct=d<=tol;
   recordAnswer(correct,'equity');document.querySelector('.submit-btn').style.display='none';
   const acc=d===0?'Spot on!':d<=5?'Excellent!':correct?'Close enough!':'Off the mark.';
   document.getElementById('feedback').innerHTML=`<div class="explanation"><strong>${acc}</strong> Answer: <strong>${eq}%</strong> (you: ${g}%, off by ${d})<br>${explain}
@@ -854,6 +856,7 @@ function setMode(mode){
   if(!isSkillUnlocked(idx))return;
   state.mode=mode;save();renderSkillPath();
   ({handRank:genHandRank,lingo:genLingo,outs:genOuts,potOdds:genPotOdds,preflop:genPreflop,equity:genEquity})[mode]();
+  setTimeout(()=>document.getElementById('gameArea').scrollIntoView({behavior:'smooth',block:'start'}),100);
 }
 
 // ===================== INIT =====================
