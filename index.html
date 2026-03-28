@@ -76,7 +76,7 @@ header h1 span{background:linear-gradient(135deg,#f59e0b,#ef4444,#ec4899);-webki
 /* ---- Game area ---- */
 .game-area{
   background:var(--surface);border:1px solid var(--border);border-radius:20px;
-  padding:24px 22px;min-height:260px;position:relative;overflow:hidden;
+  padding:24px 22px;min-height:260px;position:relative;
   box-shadow:0 4px 24px rgba(0,0,0,0.2),0 0 0 1px rgba(255,255,255,0.02) inset;
 }
 .game-area::before{
@@ -282,6 +282,78 @@ header h1 span{background:linear-gradient(135deg,#f59e0b,#ef4444,#ec4899);-webki
 }
 .reset-btn:hover{border-color:var(--muted);color:var(--text)}
 
+/* ---- Nav buttons (Daily Quiz / Progress / Speed) ---- */
+.nav-btns{display:flex;gap:8px;justify-content:center;margin-top:18px;flex-wrap:wrap}
+.nav-btn{
+  padding:10px 20px;background:var(--surface2);border:1.5px solid var(--border);
+  border-radius:12px;color:var(--text);cursor:pointer;font-size:0.82em;font-weight:700;
+  font-family:inherit;transition:all 0.15s;display:flex;align-items:center;gap:6px;
+}
+.nav-btn:hover{border-color:rgba(59,130,246,0.5);transform:translateY(-1px);box-shadow:var(--glow-blue)}
+.nav-btn .nav-icon{font-size:1.1em}
+.nav-btn.daily{border-color:rgba(168,85,247,0.3);background:rgba(168,85,247,0.05)}
+.nav-btn.daily:hover{border-color:var(--purple);box-shadow:0 0 20px rgba(168,85,247,0.15)}
+.nav-btn.progress{border-color:rgba(6,182,212,0.3);background:rgba(6,182,212,0.05)}
+.nav-btn.progress:hover{border-color:var(--cyan);box-shadow:0 0 20px rgba(6,182,212,0.15)}
+.nav-btn.speed{border-color:rgba(234,179,8,0.3);background:rgba(234,179,8,0.05)}
+.nav-btn.speed:hover{border-color:var(--amber);box-shadow:0 0 20px rgba(234,179,8,0.15)}
+
+/* ---- Quiz progress ---- */
+.quiz-header{display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:10px 14px;background:rgba(168,85,247,0.06);border-radius:12px;border:1px solid rgba(168,85,247,0.15)}
+.quiz-step{font-size:0.85em;font-weight:700;color:var(--purple);white-space:nowrap}
+.quiz-bar{flex:1;height:5px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden}
+.quiz-bar-fill{height:100%;background:linear-gradient(90deg,var(--purple),var(--cyan));border-radius:3px;transition:width 0.4s}
+.quiz-skill-tag{font-size:0.65em;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;text-align:center;margin-bottom:6px}
+
+/* ---- Quiz results ---- */
+.quiz-results{text-align:center;padding:10px 0}
+.score-ring{width:120px;height:120px;margin:16px auto;position:relative}
+.score-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.score-ring circle{fill:none;stroke-width:6;stroke-linecap:round}
+.score-ring .sr-bg{stroke:rgba(255,255,255,0.06)}
+.score-ring .sr-fill{transition:stroke-dashoffset 1s ease}
+.score-ring .sr-text{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.score-ring .sr-num{font-size:2em;font-weight:900;line-height:1}
+.score-ring .sr-label{font-size:0.65em;color:var(--muted);font-weight:600;margin-top:2px}
+.skill-breakdown{margin:20px 0;text-align:left}
+.skill-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04)}
+.skill-row:last-child{border-bottom:none}
+.skill-row .sr-icon{font-size:1em;width:24px;text-align:center}
+.skill-row .sr-name{font-size:0.78em;font-weight:600;flex:1;min-width:0}
+.skill-row .sr-bar-wrap{width:80px;height:5px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden}
+.skill-row .sr-bar-inner{height:100%;border-radius:3px}
+.skill-row .sr-score{font-size:0.75em;font-weight:700;width:32px;text-align:right}
+.weak-tag{font-size:0.6em;color:var(--amber);font-weight:700;cursor:pointer}
+.weak-tag:hover{color:var(--red)}
+
+/* ---- Progress chart ---- */
+.chart-wrap{padding:10px 0}
+.chart-wrap canvas{width:100%;height:200px;border-radius:12px;background:rgba(255,255,255,0.02)}
+.chart-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:16px}
+.chart-stat{padding:12px;background:var(--surface2);border-radius:12px;text-align:center;border:1px solid var(--border)}
+.chart-stat .cs-val{font-size:1.3em;font-weight:800}
+.chart-stat .cs-lbl{font-size:0.58em;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-top:2px}
+.empty-chart{text-align:center;padding:40px 20px;color:var(--muted)}
+.empty-chart .ec-icon{font-size:2.5em;margin-bottom:12px}
+
+/* ---- Speed round ---- */
+.speed-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding:12px 16px;background:rgba(234,179,8,0.06);border-radius:12px;border:1px solid rgba(234,179,8,0.15)}
+.speed-timer{font-size:1.6em;font-weight:900;color:var(--amber);font-variant-numeric:tabular-nums;min-width:48px;text-align:center}
+.speed-timer.urgent{color:var(--red);animation:pulse 0.5s infinite alternate}
+.speed-score{font-size:0.9em;font-weight:700;display:flex;align-items:center;gap:6px}
+.speed-score .ss-correct{color:var(--green)}
+.speed-score .ss-total{color:var(--muted)}
+.speed-flash{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:3em;font-weight:900;pointer-events:none;z-index:10;animation:flashAnim 0.4s forwards}
+.speed-flash.correct{color:var(--green)}
+.speed-flash.wrong{color:var(--red)}
+@keyframes flashAnim{0%{opacity:1;transform:scale(1.2)}100%{opacity:0;transform:scale(0.8)}}
+@keyframes pulse{from{opacity:1}to{opacity:0.5}}
+
+.speed-results{text-align:center;padding:10px 0}
+.speed-results .sr-big{font-size:3em;font-weight:900;margin:12px 0}
+.speed-results .sr-sub{color:var(--muted);font-size:0.85em;margin-bottom:4px}
+.speed-results .sr-record{font-size:0.8em;color:var(--amber);margin-top:8px}
+
 /* ---- Mobile ---- */
 @media(max-width:480px){
   .app{padding:12px 10px}
@@ -410,8 +482,9 @@ const SKILLS = [
 function defaultState(){
   return{
     correct:0,total:0,streak:0,bestStreak:0,mode:null,
-    // per-skill: rolling window of last N results (true/false)
     skills:{},
+    dailyHistory:[],   // [{date:'2026-03-28',score:8,total:10,breakdown:{handRank:{c:2,t:2},...}}]
+    speedBests:{},      // {handRank:{score:12,total:15},...}
   };
 }
 
@@ -636,12 +709,13 @@ function genHandRank(){
 }
 window.answerHR=function(idx){
   const{correctIdx,n1,n2}=window._q;const correct=idx===correctIdx;
+  if(state.mode==='speed'){speedAnswer(correct);return}
   recordAnswer(correct,'handRank');
   document.querySelectorAll('.hand-option,#ho2').forEach((el,i)=>{el.classList.add('disabled');el.onclick=null;if(i===correctIdx)el.classList.add('correct');if(i===idx&&!correct)el.classList.add('wrong')});
   const w=correctIdx===2?'Split pot!':correctIdx===0?'Player 1':'Player 2';
   const lingo=n1==='Full House'||n2==='Full House'?' (A full house is also called a "boat".)':n1==='Three of a Kind'||n2==='Three of a Kind'?' (Three of a kind with a pocket pair is called a "set"; with one card + board pair it\'s "trips".)':'';
   const fb=document.getElementById('feedback');
-  fb.innerHTML=`<div class="explanation ${correct?'explanation-correct':'explanation-wrong'}"><strong>${correct?'Correct!':'Wrong!'}</strong> ${w}<br>P1: <strong>${n1}</strong> &nbsp;·&nbsp; P2: <strong>${n2}</strong>${lingo}</div><button class="next-btn" onclick="genHandRank()">Next →</button>`;
+  fb.innerHTML=`<div class="explanation ${correct?'explanation-correct':'explanation-wrong'}"><strong>${correct?'Correct!':'Wrong!'}</strong> ${w}<br>P1: <strong>${n1}</strong> &nbsp;·&nbsp; P2: <strong>${n2}</strong>${lingo}</div><button class="next-btn" onclick="${state.mode==='dailyQuiz'?'quizNext()':'genHandRank()'}">Next →</button>`;
   setTimeout(()=>{const nb=fb.querySelector('.next-btn');if(nb){const r=nb.getBoundingClientRect();if(r.bottom>window.innerHeight)window.scrollBy({top:r.bottom-window.innerHeight+24,behavior:'smooth'})}},300);
 };
 
@@ -670,9 +744,11 @@ function genOuts(){
 }
 window.answerOuts=function(){
   const{outs,explain}=window._q;const g=+document.getElementById('sv').textContent;const d=Math.abs(g-outs);const correct=d<=1;
+  if(state.mode==='speed'){speedAnswer(correct);return}
   recordAnswer(correct,'outs');document.querySelector('.submit-btn').style.display='none';
   const fb=document.getElementById('feedback');
-  fb.innerHTML=`<div class="explanation ${correct?'explanation-correct':'explanation-wrong'}"><strong>${correct?(d===0?'Exact!':'Close enough!'):'Not quite.'}</strong> Answer: <strong>${outs} outs</strong> (you: ${g})<br>${explain}<br><br><strong>Rule of 2 & 4:</strong> On the flop, multiply outs ×4 ≈ ${outs*4}% equity by the river. On the turn, ×2 ≈ ${outs*2}%. If you have 0 outs, you\'re "drawing dead."</div><button class="next-btn" onclick="genOuts()">Next →</button>`;
+  const nextFn=state.mode==='dailyQuiz'?'quizNext()':'genOuts()';
+  fb.innerHTML=`<div class="explanation ${correct?'explanation-correct':'explanation-wrong'}"><strong>${correct?(d===0?'Exact!':'Close enough!'):'Not quite.'}</strong> Answer: <strong>${outs} outs</strong> (you: ${g})<br>${explain}<br><br><strong>Rule of 2 & 4:</strong> On the flop, multiply outs ×4 ≈ ${outs*4}% equity by the river. On the turn, ×2 ≈ ${outs*2}%. If you have 0 outs, you\'re "drawing dead."</div><button class="next-btn" onclick="${nextFn}">Next →</button>`;
   setTimeout(()=>{const nb=fb.querySelector('.next-btn');if(nb){const r=nb.getBoundingClientRect();if(r.bottom>window.innerHeight)window.scrollBy({top:r.bottom-window.innerHeight+24,behavior:'smooth'})}},300);
 };
 
@@ -706,9 +782,11 @@ function genPotOdds(){
 }
 window.answerPO=function(called){
   const{shouldCall,potOdds,equity,outs,callAmt,totalPot,impliedNote}=window._q;const correct=called===shouldCall;
+  if(state.mode==='speed'){speedAnswer(correct);return}
   recordAnswer(correct,'potOdds');document.querySelectorAll('.option-btn').forEach(b=>b.disabled=true);
   const fb=document.getElementById('feedback');
-  fb.innerHTML=`<div class="explanation ${correct?'explanation-correct':'explanation-wrong'}"><strong>${correct?'Correct!':'Wrong!'}</strong> You should <strong>${shouldCall?'CALL':'FOLD'}</strong>.<br><br><strong>Pot odds:</strong> $${callAmt} to win $${totalPot} = ${potOdds.toFixed(1)}% needed<br><strong>Equity:</strong> ~${outs} × 4 = ~${equity}%${impliedNote}<br><br>${equity>potOdds?'Equity > pot odds → this is a "+EV" (positive expected value) call.':'Equity < pot odds → this is "-EV", so folding saves chips long-term.'}</div><button class="next-btn" onclick="genPotOdds()">Next →</button>`;
+  const nextFn=state.mode==='dailyQuiz'?'quizNext()':'genPotOdds()';
+  fb.innerHTML=`<div class="explanation ${correct?'explanation-correct':'explanation-wrong'}"><strong>${correct?'Correct!':'Wrong!'}</strong> You should <strong>${shouldCall?'CALL':'FOLD'}</strong>.<br><br><strong>Pot odds:</strong> $${callAmt} to win $${totalPot} = ${potOdds.toFixed(1)}% needed<br><strong>Equity:</strong> ~${outs} × 4 = ~${equity}%${impliedNote}<br><br>${equity>potOdds?'Equity > pot odds → this is a "+EV" (positive expected value) call.':'Equity < pot odds → this is "-EV", so folding saves chips long-term.'}</div><button class="next-btn" onclick="${nextFn}">Next →</button>`;
   setTimeout(()=>{const nb=fb.querySelector('.next-btn');if(nb){const r=nb.getBoundingClientRect();if(r.bottom>window.innerHeight)window.scrollBy({top:r.bottom-window.innerHeight+24,behavior:'smooth'})}},300);
 };
 
@@ -756,10 +834,12 @@ function genPreflop(){
 window.answerPF=function(a){
   const{rec}=window._q;const correct=a===rec.action;
   const close=(a==='Raise'&&rec.action==='Call')||(a==='Call'&&rec.action==='Raise');
+  if(state.mode==='speed'){speedAnswer(correct||close);return}
   recordAnswer(correct||close,'preflop');
   document.querySelectorAll('.option-btn').forEach(b=>{b.disabled=true;if(b.textContent===rec.action)b.classList.add('correct');if(b.textContent===a&&!correct&&!close)b.classList.add('wrong')});
   const fb=document.getElementById('feedback');
-  fb.innerHTML=`<div class="explanation ${correct||close?'explanation-correct':'explanation-wrong'}"><strong>${correct?'Correct!':close?'Acceptable!':'Wrong!'}</strong> Best: <strong>${rec.action}</strong> (${rec.cat})<br>${rec.why}${close?'<br><em>Both raise and call work here.</em>':''}</div>${!correct&&!close?'<div class="tip-box">Position is power! Late seats (CO = "cutoff", BTN = "button") act last post-flop, letting you play more hands. Early seats like UTG ("under the gun") should stick to premium hands.</div>':''}<button class="next-btn" onclick="genPreflop()">Next →</button>`;
+  const nextFn=state.mode==='dailyQuiz'?'quizNext()':'genPreflop()';
+  fb.innerHTML=`<div class="explanation ${correct||close?'explanation-correct':'explanation-wrong'}"><strong>${correct?'Correct!':close?'Acceptable!':'Wrong!'}</strong> Best: <strong>${rec.action}</strong> (${rec.cat})<br>${rec.why}${close?'<br><em>Both raise and call work here.</em>':''}</div>${!correct&&!close?'<div class="tip-box">Position is power! Late seats (CO = "cutoff", BTN = "button") act last post-flop, letting you play more hands. Early seats like UTG ("under the gun") should stick to premium hands.</div>':''}<button class="next-btn" onclick="${nextFn}">Next →</button>`;
   setTimeout(()=>{const nb=fb.querySelector('.next-btn');if(nb){const r=nb.getBoundingClientRect();if(r.bottom>window.innerHeight)window.scrollBy({top:r.bottom-window.innerHeight+24,behavior:'smooth'})}},300);
 };
 
@@ -798,12 +878,14 @@ function genEquity(){
 }
 window.answerEQ=function(){
   const{eq,explain,tol}=window._q;const g=+document.getElementById('eqV').textContent;const d=Math.abs(g-eq);const correct=d<=tol;
+  if(state.mode==='speed'){speedAnswer(correct);return}
   recordAnswer(correct,'equity');document.querySelector('.submit-btn').style.display='none';
   const acc=d===0?'Spot on!':d<=5?'Excellent!':correct?'Close enough!':'Off the mark.';
   const fb=document.getElementById('feedback');
+  const nextFn=state.mode==='dailyQuiz'?'quizNext()':'genEquity()';
   fb.innerHTML=`<div class="explanation ${correct?'explanation-correct':'explanation-wrong'}"><strong>${acc}</strong> Answer: <strong>${eq}%</strong> (you: ${g}%, off by ${d})<br>${explain}
     <div class="tip-box">Key rules: Pair vs overs ≈ 55/45 · Pair vs underpair ≈ 80/20 · Domination ≈ 70/30 · Suited adds ~3%</div></div>
-    <button class="next-btn" onclick="genEquity()">Next →</button>`;
+    <button class="next-btn" onclick="${nextFn}">Next →</button>`;
   setTimeout(()=>{const nb=fb.querySelector('.next-btn');if(nb){const r=nb.getBoundingClientRect();if(r.bottom>window.innerHeight)window.scrollBy({top:r.bottom-window.innerHeight+24,behavior:'smooth'})}},300);
 };
 
@@ -886,6 +968,7 @@ function genLingo(){
 
 window.answerLingo=function(idx){
   const{correct,explain,cat}=window._q;const isCorrect=idx===correct;
+  if(state.mode==='speed'){speedAnswer(isCorrect);return}
   recordAnswer(isCorrect,'lingo');
   document.querySelectorAll('.option-btn').forEach((b,i)=>{
     b.disabled=true;
@@ -894,18 +977,26 @@ window.answerLingo=function(idx){
   });
   const icon=cat==='etiquette'?'🤝':'📖';
   const fb=document.getElementById('feedback');
-  fb.innerHTML=`<div class="explanation ${isCorrect?'explanation-correct':'explanation-wrong'}"><strong>${isCorrect?'Correct!':'Wrong!'}</strong> ${icon} ${explain}</div><button class="next-btn" onclick="genLingo()">Next →</button>`;
+  fb.innerHTML=`<div class="explanation ${isCorrect?'explanation-correct':'explanation-wrong'}"><strong>${isCorrect?'Correct!':'Wrong!'}</strong> ${icon} ${explain}</div><button class="next-btn" onclick="${state.mode==='dailyQuiz'?'quizNext()':'genLingo()'}">Next →</button>`;
   setTimeout(()=>{const nb=fb.querySelector('.next-btn');if(nb){const r=nb.getBoundingClientRect();if(r.bottom>window.innerHeight)window.scrollBy({top:r.bottom-window.innerHeight+24,behavior:'smooth'})}},300);
 };
 
 // ===================== NAV =====================
 function showIntro(){
+  const hasUnlocked=SKILLS.filter((_,i)=>isSkillUnlocked(i)).length;
+  const hasMastered=SKILLS.some(sk=>isMastered(getSkillState(sk.id).history));
+  const hasDaily=state.dailyHistory&&state.dailyHistory.length>0;
   document.getElementById('gameArea').innerHTML=`<div class="intro fade-in">
     <h2>Learn Poker by Doing</h2>
     <p>Each skill unlocks when you <strong>prove mastery</strong> of the previous one.
     Get ${MASTERY_THRESHOLD}/${MASTERY_WINDOW} correct in your recent attempts to advance.</p>
     <p style="color:var(--amber);font-size:0.8em">No grinding — just skill.</p>
-    <button class="start-btn" onclick="setMode('handRank')">Start Training</button>
+    <button class="start-btn" onclick="setMode('${state.mode||'handRank'}')">Start Training</button>
+    ${hasUnlocked>=2?`<div class="nav-btns">
+      <button class="nav-btn daily" onclick="startDailyQuiz()"><span class="nav-icon">📋</span> Daily Quiz</button>
+      <button class="nav-btn progress" onclick="showProgress()"><span class="nav-icon">📈</span> Progress</button>
+      ${hasMastered?'<button class="nav-btn speed" onclick="pickSpeedSkill()"><span class="nav-icon">⚡</span> Speed Round</button>':''}
+    </div>`:''}
     <br><button class="reset-btn" onclick="if(confirm('Reset all progress?')){localStorage.removeItem('pokerTrainer2');location.reload()}">Reset Progress</button>
   </div>`;
 }
@@ -918,9 +1009,382 @@ function setMode(mode){
   setTimeout(()=>document.getElementById('gameArea').scrollIntoView({behavior:'smooth',block:'start'}),100);
 }
 
+// ===================== DAILY QUIZ =====================
+let quizState=null;
+
+function getUnlockedSkills(){return SKILLS.filter((_,i)=>isSkillUnlocked(i))}
+
+function startDailyQuiz(){
+  const unlocked=getUnlockedSkills();
+  if(unlocked.length<1)return;
+  const perSkill=Math.max(1,Math.floor(10/unlocked.length));
+  const questions=[];
+  const skillOrder=shuffle([...unlocked]);
+  for(const sk of skillOrder){
+    const count=questions.length+perSkill>10?10-questions.length:perSkill;
+    for(let i=0;i<count&&questions.length<10;i++) questions.push({skillId:sk.id,skillName:sk.name,skillIcon:sk.icon});
+  }
+  while(questions.length<10){
+    const sk=unlocked[rand(unlocked.length)];
+    questions.push({skillId:sk.id,skillName:sk.name,skillIcon:sk.icon});
+  }
+  shuffle(questions);
+  quizState={questions,current:0,answers:[],breakdown:{}};
+  unlocked.forEach(sk=>quizState.breakdown[sk.id]={c:0,t:0});
+  state.mode='dailyQuiz';save();renderSkillPath();
+  renderQuizQuestion();
+}
+
+window.quizNext=function(){
+  if(!quizState)return;
+  quizState.current++;
+  renderQuizQuestion();
+};
+
+function renderQuizQuestion(){
+  if(!quizState||quizState.current>=quizState.questions.length)return showQuizResults();
+  const q=quizState.questions[quizState.current];
+  const pct=(quizState.current/quizState.questions.length)*100;
+  // Generate the skill question (writes to gameArea)
+  const genMap={handRank:genHandRank,lingo:genLingo,outs:genOuts,potOdds:genPotOdds,preflop:genPreflop,equity:genEquity};
+  genMap[q.skillId]();
+  // Prepend quiz header
+  const area=document.getElementById('gameArea');
+  const container=area.querySelector('.fade-in');
+  if(container){
+    // Remove mastery bar (not relevant in quiz mode)
+    const mb=container.querySelector('.mastery-progress');if(mb)mb.remove();
+    const headerHTML=`<div class="quiz-header">
+      <span class="quiz-step">Q${quizState.current+1}/10</span>
+      <div class="quiz-bar"><div class="quiz-bar-fill" style="width:${pct}%"></div></div>
+      <span style="font-size:0.75em;color:var(--muted)">${quizState.answers.filter(Boolean).length}✓</span>
+    </div><div class="quiz-skill-tag">${q.skillIcon} ${q.skillName}</div>`;
+    container.insertAdjacentHTML('afterbegin',headerHTML);
+  }
+}
+
+// Override recordAnswer to not affect mastery in quiz mode
+const _origRecordAnswer=recordAnswer;
+recordAnswer=function(correct,skillId){
+  if(state.mode==='dailyQuiz'&&quizState){
+    quizState.answers.push(correct);
+    if(quizState.breakdown[skillId]){
+      quizState.breakdown[skillId].t++;
+      if(correct)quizState.breakdown[skillId].c++;
+    }
+    state.total++;if(correct){state.correct++;state.streak++}else{state.streak=0}
+    if(state.streak>state.bestStreak)state.bestStreak=state.streak;
+    save();renderStatsBar();
+    return;
+  }
+  _origRecordAnswer(correct,skillId);
+};
+
+function showQuizResults(){
+  if(!quizState)return;
+  const score=quizState.answers.filter(Boolean).length;
+  const total=quizState.answers.length;
+  const pct=total?Math.round(score/total*100):0;
+  const color=score>=8?'var(--green)':score>=5?'var(--amber)':'var(--red)';
+
+  // Save to history
+  const today=new Date().toISOString().slice(0,10);
+  if(!state.dailyHistory)state.dailyHistory=[];
+  state.dailyHistory.push({date:today,score,total,breakdown:{...quizState.breakdown}});
+  state.mode=null;save();
+
+  const r=52,circ=2*Math.PI*r;
+  const offset=circ*(1-score/10);
+
+  let breakdownHTML='';
+  for(const sk of getUnlockedSkills()){
+    const b=quizState.breakdown[sk.id];
+    if(!b||b.t===0)continue;
+    const bpct=Math.round(b.c/b.t*100);
+    const bc=bpct>=70?'var(--green)':bpct>=40?'var(--amber)':'var(--red)';
+    const weak=bpct<60?`<span class="weak-tag" onclick="setMode('${sk.id}')">Practice →</span>`:'';
+    breakdownHTML+=`<div class="skill-row">
+      <span class="sr-icon">${sk.icon}</span>
+      <span class="sr-name">${sk.name}</span>
+      <div class="sr-bar-wrap"><div class="sr-bar-inner" style="width:${bpct}%;background:${bc}"></div></div>
+      <span class="sr-score" style="color:${bc}">${b.c}/${b.t}</span>
+      ${weak}
+    </div>`;
+  }
+
+  const area=document.getElementById('gameArea');
+  area.innerHTML=`<div class="quiz-results fade-in">
+    <h2 style="margin-bottom:4px">Daily Quiz Complete!</h2>
+    <div class="score-ring">
+      <svg viewBox="0 0 120 120"><circle class="sr-bg" cx="60" cy="60" r="${r}"/><circle class="sr-fill" cx="60" cy="60" r="${r}" stroke="${color}" stroke-width="6" stroke-linecap="round" fill="none" stroke-dasharray="${circ}" stroke-dashoffset="${offset}"/></svg>
+      <div class="sr-text"><span class="sr-num" style="color:${color}">${score}</span><span class="sr-label">out of ${total}</span></div>
+    </div>
+    <p style="color:var(--muted);font-size:0.85em">${score>=9?'Outstanding! 🏆':score>=7?'Great job! 💪':score>=5?'Getting there! 📚':'Keep practicing! 🎯'}</p>
+    <div class="skill-breakdown">${breakdownHTML}</div>
+    <div class="nav-btns">
+      <button class="nav-btn daily" onclick="startDailyQuiz()"><span class="nav-icon">🔄</span> Retake</button>
+      <button class="nav-btn progress" onclick="showProgress()"><span class="nav-icon">📈</span> See Progress</button>
+    </div>
+    <br><button class="next-btn" onclick="showIntro()">← Back</button>
+  </div>`;
+  quizState=null;
+  renderSkillPath();
+}
+
+// ===================== PROGRESS CHART =====================
+function showProgress(){
+  state.mode=null;save();renderSkillPath();
+  const area=document.getElementById('gameArea');
+  const hist=state.dailyHistory||[];
+
+  if(hist.length===0){
+    area.innerHTML=`<div class="empty-chart fade-in">
+      <div class="ec-icon">📈</div>
+      <h2>No Data Yet</h2>
+      <p style="color:var(--muted);margin:8px 0 16px">Take your first Daily Quiz to start tracking progress!</p>
+      <button class="nav-btn daily" onclick="startDailyQuiz()" style="margin:0 auto"><span class="nav-icon">📋</span> Start Daily Quiz</button>
+      <br><br><button class="next-btn" onclick="showIntro()">← Back</button>
+    </div>`;
+    return;
+  }
+
+  // Compute stats
+  const scores=hist.map(h=>h.score);
+  const avg=(scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1);
+  const best=Math.max(...scores);
+  const days=new Set(hist.map(h=>h.date)).size;
+
+  // Daily streak
+  let streak=0;
+  const uniqueDates=[...new Set(hist.map(h=>h.date))].sort().reverse();
+  const today=new Date().toISOString().slice(0,10);
+  const yesterday=new Date(Date.now()-86400000).toISOString().slice(0,10);
+  if(uniqueDates[0]===today||uniqueDates[0]===yesterday){
+    streak=1;
+    for(let i=1;i<uniqueDates.length;i++){
+      const d1=new Date(uniqueDates[i-1]),d2=new Date(uniqueDates[i]);
+      if((d1-d2)/(86400000)<=1)streak++;else break;
+    }
+  }
+
+  // Aggregate skill accuracy
+  const skillAgg={};
+  for(const h of hist){
+    if(!h.breakdown)continue;
+    for(const[sid,b]of Object.entries(h.breakdown)){
+      if(!skillAgg[sid])skillAgg[sid]={c:0,t:0};
+      skillAgg[sid].c+=b.c;skillAgg[sid].t+=b.t;
+    }
+  }
+  let skillBarsHTML='';
+  for(const sk of SKILLS){
+    const a=skillAgg[sk.id];
+    if(!a||a.t===0)continue;
+    const p=Math.round(a.c/a.t*100);
+    const c=p>=70?'var(--green)':p>=40?'var(--amber)':'var(--red)';
+    skillBarsHTML+=`<div class="skill-row"><span class="sr-icon">${sk.icon}</span><span class="sr-name">${sk.name}</span>
+      <div class="sr-bar-wrap"><div class="sr-bar-inner" style="width:${p}%;background:${c}"></div></div>
+      <span class="sr-score" style="color:${c}">${p}%</span></div>`;
+  }
+
+  area.innerHTML=`<div class="chart-wrap fade-in">
+    <h2 style="text-align:center;margin-bottom:16px">Your Progress</h2>
+    <canvas id="progressChart" width="640" height="200"></canvas>
+    <div class="chart-stats">
+      <div class="chart-stat"><div class="cs-val" style="color:var(--blue)">${avg}</div><div class="cs-lbl">Avg Score</div></div>
+      <div class="chart-stat"><div class="cs-val" style="color:var(--green)">${best}/10</div><div class="cs-lbl">Best Score</div></div>
+      <div class="chart-stat"><div class="cs-val" style="color:var(--amber)">${streak}🔥</div><div class="cs-lbl">Day Streak</div></div>
+      <div class="chart-stat"><div class="cs-val">${days}</div><div class="cs-lbl">Days Played</div></div>
+    </div>
+    ${skillBarsHTML?`<h3 style="margin:20px 0 8px;font-size:0.85em;color:var(--muted)">Skill Accuracy (All Quizzes)</h3><div class="skill-breakdown">${skillBarsHTML}</div>`:''}
+    <div class="nav-btns" style="margin-top:16px">
+      <button class="nav-btn daily" onclick="startDailyQuiz()"><span class="nav-icon">📋</span> Take Quiz</button>
+      <button class="next-btn" onclick="showIntro()">← Back</button>
+    </div>
+  </div>`;
+
+  // Draw chart
+  setTimeout(()=>drawChart(hist),50);
+}
+
+function drawChart(hist){
+  const canvas=document.getElementById('progressChart');
+  if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  const dpr=window.devicePixelRatio||1;
+  const rect=canvas.getBoundingClientRect();
+  canvas.width=rect.width*dpr;canvas.height=rect.height*dpr;
+  ctx.scale(dpr,dpr);
+  const W=rect.width,H=rect.height;
+  const pad={top:20,right:20,bottom:30,left:35};
+  const cW=W-pad.left-pad.right,cH=H-pad.top-pad.bottom;
+
+  // Grid lines
+  ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=1;
+  for(let i=0;i<=10;i+=2){
+    const y=pad.top+cH*(1-i/10);
+    ctx.beginPath();ctx.moveTo(pad.left,y);ctx.lineTo(W-pad.right,y);ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,0.25)';ctx.font='10px Inter';ctx.textAlign='right';
+    ctx.fillText(i,pad.left-6,y+3);
+  }
+
+  if(hist.length<2){
+    // Single point
+    const x=pad.left+cW/2,y=pad.top+cH*(1-hist[0].score/10);
+    const c=hist[0].score>=8?'#22c55e':hist[0].score>=5?'#f59e0b':'#ef4444';
+    ctx.beginPath();ctx.arc(x,y,6,0,Math.PI*2);ctx.fillStyle=c;ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,0.4)';ctx.textAlign='center';ctx.font='10px Inter';
+    ctx.fillText(hist[0].date.slice(5),x,H-pad.bottom+14);
+    return;
+  }
+
+  // Line + dots
+  const step=cW/(hist.length-1);
+  ctx.beginPath();ctx.strokeStyle='rgba(59,130,246,0.4)';ctx.lineWidth=2;
+  hist.forEach((h,i)=>{
+    const x=pad.left+i*step,y=pad.top+cH*(1-h.score/10);
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+
+  // Fill under line
+  ctx.lineTo(pad.left+(hist.length-1)*step,pad.top+cH);
+  ctx.lineTo(pad.left,pad.top+cH);ctx.closePath();
+  ctx.fillStyle='rgba(59,130,246,0.06)';ctx.fill();
+
+  // Dots + labels
+  hist.forEach((h,i)=>{
+    const x=pad.left+i*step,y=pad.top+cH*(1-h.score/10);
+    const c=h.score>=8?'#22c55e':h.score>=5?'#f59e0b':'#ef4444';
+    ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.fillStyle=c;ctx.fill();
+    // X label (date)
+    if(hist.length<=14||i%Math.ceil(hist.length/7)===0){
+      ctx.fillStyle='rgba(255,255,255,0.35)';ctx.textAlign='center';ctx.font='9px Inter';
+      ctx.fillText(h.date.slice(5),x,H-pad.bottom+14);
+    }
+  });
+}
+
+// ===================== SPEED ROUNDS =====================
+let speedState=null; // {skillId, timer, correct, total, interval, startTime}
+
+function pickSpeedSkill(){
+  const mastered=SKILLS.filter(sk=>isMastered(getSkillState(sk.id).history)||getSkillState(sk.id).tierHistory[0].length>=MASTERY_WINDOW);
+  if(mastered.length===0){
+    showToast('Master at least one skill first!','streak');return;
+  }
+  const area=document.getElementById('gameArea');
+  const bestHTML=Object.entries(state.speedBests||{}).map(([id,b])=>{
+    const sk=SKILLS.find(s=>s.id===id);
+    return sk?`<div class="skill-row"><span class="sr-icon">${sk.icon}</span><span class="sr-name">${sk.name}</span><span class="sr-score" style="color:var(--green)">${b.score}/${b.total}</span></div>`:'';
+  }).join('');
+
+  area.innerHTML=`<div class="fade-in" style="text-align:center">
+    <h2>⚡ Speed Round</h2>
+    <p style="color:var(--muted);font-size:0.85em;margin:8px 0 16px">60 seconds. No explanations. How fast can you think?</p>
+    <div class="options" style="grid-template-columns:1fr">
+      ${mastered.map(sk=>`<button class="option-btn" onclick="startSpeedRound('${sk.id}')" style="text-align:left;display:flex;align-items:center;gap:10px">
+        <span style="font-size:1.2em">${sk.icon}</span> ${sk.name}
+        ${state.speedBests&&state.speedBests[sk.id]?`<span style="margin-left:auto;font-size:0.75em;color:var(--amber)">Best: ${state.speedBests[sk.id].score}/${state.speedBests[sk.id].total}</span>`:''}
+      </button>`).join('')}
+    </div>
+    ${bestHTML?`<div style="margin-top:16px"><h3 style="font-size:0.8em;color:var(--muted);margin-bottom:8px">🏆 Records</h3><div class="skill-breakdown">${bestHTML}</div></div>`:''}
+    <button class="next-btn" onclick="showIntro()">← Back</button>
+  </div>`;
+}
+
+function startSpeedRound(skillId){
+  speedState={skillId,correct:0,total:0,timeLeft:60};
+  state.mode='speed';save();renderSkillPath();
+  renderSpeedQuestion();
+  speedState.interval=setInterval(()=>{
+    speedState.timeLeft--;
+    const timerEl=document.querySelector('.speed-timer');
+    if(timerEl){
+      timerEl.textContent=speedState.timeLeft+'s';
+      if(speedState.timeLeft<=10)timerEl.classList.add('urgent');
+    }
+    if(speedState.timeLeft<=0){clearInterval(speedState.interval);showSpeedResults()}
+  },1000);
+}
+
+function renderSpeedQuestion(){
+  if(!speedState||speedState.timeLeft<=0)return;
+  const area=document.getElementById('gameArea');
+  // Save speed state reference, generate question
+  window._speedMode=true;
+  const genMap={handRank:genHandRank,lingo:genLingo,outs:genOuts,potOdds:genPotOdds,preflop:genPreflop,equity:genEquity};
+  genMap[speedState.skillId]();
+  window._speedMode=false;
+  // Prepend speed header
+  const container=area.querySelector('.fade-in');
+  if(container){
+    const headerHTML=`<div class="speed-header">
+      <span class="speed-timer">${speedState.timeLeft}s</span>
+      <div class="speed-score"><span class="ss-correct">${speedState.correct}✓</span> <span class="ss-total">/ ${speedState.total}</span></div>
+    </div>`;
+    container.insertAdjacentHTML('afterbegin',headerHTML);
+    // Remove mastery bar in speed mode
+    const mb=container.querySelector('.mastery-progress');if(mb)mb.remove();
+  }
+}
+
+function speedAnswer(correct){
+  if(!speedState)return;
+  speedState.total++;
+  if(correct)speedState.correct++;
+  state.total++;if(correct){state.correct++;state.streak++}else state.streak=0;
+  if(state.streak>state.bestStreak)state.bestStreak=state.streak;
+  save();renderStatsBar();
+  const area=document.getElementById('gameArea');
+  const flash=document.createElement('div');
+  flash.className=`speed-flash ${correct?'correct':'wrong'}`;
+  flash.textContent=correct?'✓':'✗';
+  area.appendChild(flash);
+  setTimeout(()=>flash.remove(),400);
+  setTimeout(()=>{if(speedState&&speedState.timeLeft>0)renderSpeedQuestion()},500);
+}
+
+function showSpeedResults(){
+  if(speedState&&speedState.interval)clearInterval(speedState.interval);
+  if(!speedState)return;
+  const{skillId,correct,total}=speedState;
+  const sk=SKILLS.find(s=>s.id===skillId);
+  const acc=total?Math.round(correct/total*100):0;
+  const color=acc>=80?'var(--green)':acc>=50?'var(--amber)':'var(--red)';
+
+  // Check/update best
+  if(!state.speedBests)state.speedBests={};
+  const prev=state.speedBests[skillId];
+  const isNewRecord=!prev||correct>prev.score;
+  if(isNewRecord)state.speedBests[skillId]={score:correct,total};
+  state.mode=null;save();renderSkillPath();
+
+  const area=document.getElementById('gameArea');
+  area.innerHTML=`<div class="speed-results fade-in">
+    <h2>⚡ Speed Round Complete!</h2>
+    <p class="sr-sub">${sk.icon} ${sk.name} · 60 seconds</p>
+    <div class="sr-big" style="color:${color}">${correct}<span style="font-size:0.4em;color:var(--muted)">/${total}</span></div>
+    <p style="color:var(--muted);font-size:0.85em">${acc}% accuracy · ${(correct/60*60).toFixed(1)} correct/min</p>
+    ${isNewRecord?'<p class="sr-record">🏆 New Personal Best!</p>':''}
+    ${prev&&!isNewRecord?`<p class="sr-record">Record: ${prev.score}/${prev.total}</p>`:''}
+    <div class="nav-btns" style="margin-top:20px">
+      <button class="nav-btn speed" onclick="startSpeedRound('${skillId}')"><span class="nav-icon">🔄</span> Again</button>
+      <button class="nav-btn speed" onclick="pickSpeedSkill()"><span class="nav-icon">⚡</span> Other Skill</button>
+    </div>
+    <button class="next-btn" onclick="showIntro()" style="margin-top:12px">← Back</button>
+  </div>`;
+  speedState=null;
+}
+
 // ===================== INIT =====================
+// Ensure state has new fields
+if(!state.dailyHistory)state.dailyHistory=[];
+if(!state.speedBests)state.speedBests={};
+save();
+
 renderStatsBar();renderSkillPath();
-if(state.mode){const idx=SKILLS.findIndex(s=>s.id===state.mode);if(isSkillUnlocked(idx))setMode(state.mode);else showIntro();}
+if(state.mode&&state.mode!=='dailyQuiz'&&state.mode!=='speed'){const idx=SKILLS.findIndex(s=>s.id===state.mode);if(isSkillUnlocked(idx))setMode(state.mode);else showIntro();}
 else showIntro();
 </script>
 </body>
