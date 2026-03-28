@@ -593,7 +593,9 @@ window.answerHR=function(idx){
   document.querySelectorAll('.hand-option,#ho2').forEach((el,i)=>{el.classList.add('disabled');el.onclick=null;if(i===correctIdx)el.classList.add('correct');if(i===idx&&!correct)el.classList.add('wrong')});
   const w=correctIdx===2?'Split pot!':correctIdx===0?'Player 1':'Player 2';
   const lingo=n1==='Full House'||n2==='Full House'?' (A full house is also called a "boat".)':n1==='Three of a Kind'||n2==='Three of a Kind'?' (Three of a kind with a pocket pair is called a "set"; with one card + board pair it\'s "trips".)':'';
-  document.getElementById('feedback').innerHTML=`<div class="explanation"><strong>${correct?'Correct!':'Wrong!'}</strong> ${w}<br>P1: <strong>${n1}</strong> &nbsp;·&nbsp; P2: <strong>${n2}</strong>${lingo}</div><button class="next-btn" onclick="genHandRank()">Next →</button>`;
+  const fb=document.getElementById('feedback');
+  fb.innerHTML=`<div class="explanation"><strong>${correct?'Correct!':'Wrong!'}</strong> ${w}<br>P1: <strong>${n1}</strong> &nbsp;·&nbsp; P2: <strong>${n2}</strong>${lingo}</div><button class="next-btn" onclick="genHandRank()">Next →</button>`;
+  setTimeout(()=>{const nb=fb.querySelector('.next-btn');if(nb)nb.scrollIntoView({behavior:'smooth',block:'nearest'});else fb.scrollIntoView({behavior:'smooth',block:'end'})},150);
 };
 
 // ===================== OUTS =====================
@@ -622,7 +624,9 @@ function genOuts(){
 window.answerOuts=function(){
   const{outs,explain}=window._q;const g=+document.getElementById('sv').textContent;const d=Math.abs(g-outs);const correct=d<=1;
   recordAnswer(correct,'outs');document.querySelector('.submit-btn').style.display='none';
-  document.getElementById('feedback').innerHTML=`<div class="explanation"><strong>${correct?(d===0?'Exact!':'Close enough!'):'Not quite.'}</strong> Answer: <strong>${outs} outs</strong> (you: ${g})<br>${explain}<br><br><strong>Rule of 2 & 4:</strong> On the flop, multiply outs ×4 ≈ ${outs*4}% equity by the river. On the turn, ×2 ≈ ${outs*2}%. If you have 0 outs, you\'re "drawing dead."</div><button class="next-btn" onclick="genOuts()">Next →</button>`;
+  const fb=document.getElementById('feedback');
+  fb.innerHTML=`<div class="explanation"><strong>${correct?(d===0?'Exact!':'Close enough!'):'Not quite.'}</strong> Answer: <strong>${outs} outs</strong> (you: ${g})<br>${explain}<br><br><strong>Rule of 2 & 4:</strong> On the flop, multiply outs ×4 ≈ ${outs*4}% equity by the river. On the turn, ×2 ≈ ${outs*2}%. If you have 0 outs, you\'re "drawing dead."</div><button class="next-btn" onclick="genOuts()">Next →</button>`;
+  setTimeout(()=>{const nb=fb.querySelector('.next-btn');if(nb)nb.scrollIntoView({behavior:'smooth',block:'nearest'});else fb.scrollIntoView({behavior:'smooth',block:'end'})},150);
 };
 
 // ===================== POT ODDS =====================
@@ -656,7 +660,9 @@ function genPotOdds(){
 window.answerPO=function(called){
   const{shouldCall,potOdds,equity,outs,callAmt,totalPot,impliedNote}=window._q;const correct=called===shouldCall;
   recordAnswer(correct,'potOdds');document.querySelectorAll('.option-btn').forEach(b=>b.disabled=true);
-  document.getElementById('feedback').innerHTML=`<div class="explanation"><strong>${correct?'Correct!':'Wrong!'}</strong> You should <strong>${shouldCall?'CALL':'FOLD'}</strong>.<br><br><strong>Pot odds:</strong> $${callAmt} to win $${totalPot} = ${potOdds.toFixed(1)}% needed<br><strong>Equity:</strong> ~${outs} × 4 = ~${equity}%${impliedNote}<br><br>${equity>potOdds?'Equity > pot odds → this is a "+EV" (positive expected value) call.':'Equity < pot odds → this is "-EV", so folding saves chips long-term.'}</div><button class="next-btn" onclick="genPotOdds()">Next →</button>`;
+  const fb=document.getElementById('feedback');
+  fb.innerHTML=`<div class="explanation"><strong>${correct?'Correct!':'Wrong!'}</strong> You should <strong>${shouldCall?'CALL':'FOLD'}</strong>.<br><br><strong>Pot odds:</strong> $${callAmt} to win $${totalPot} = ${potOdds.toFixed(1)}% needed<br><strong>Equity:</strong> ~${outs} × 4 = ~${equity}%${impliedNote}<br><br>${equity>potOdds?'Equity > pot odds → this is a "+EV" (positive expected value) call.':'Equity < pot odds → this is "-EV", so folding saves chips long-term.'}</div><button class="next-btn" onclick="genPotOdds()">Next →</button>`;
+  setTimeout(()=>{const nb=fb.querySelector('.next-btn');if(nb)nb.scrollIntoView({behavior:'smooth',block:'nearest'});else fb.scrollIntoView({behavior:'smooth',block:'end'})},150);
 };
 
 // ===================== PREFLOP =====================
@@ -705,7 +711,9 @@ window.answerPF=function(a){
   const close=(a==='Raise'&&rec.action==='Call')||(a==='Call'&&rec.action==='Raise');
   recordAnswer(correct||close,'preflop');
   document.querySelectorAll('.option-btn').forEach(b=>{b.disabled=true;if(b.textContent===rec.action)b.classList.add('correct');if(b.textContent===a&&!correct&&!close)b.classList.add('wrong')});
-  document.getElementById('feedback').innerHTML=`<div class="explanation"><strong>${correct?'Correct!':close?'Acceptable!':'Wrong!'}</strong> Best: <strong>${rec.action}</strong> (${rec.cat})<br>${rec.why}${close?'<br><em>Both raise and call work here.</em>':''}</div>${!correct&&!close?'<div class="tip-box">Position is power! Late seats (CO = "cutoff", BTN = "button") act last post-flop, letting you play more hands. Early seats like UTG ("under the gun") should stick to premium hands.</div>':''}<button class="next-btn" onclick="genPreflop()">Next →</button>`;
+  const fb=document.getElementById('feedback');
+  fb.innerHTML=`<div class="explanation"><strong>${correct?'Correct!':close?'Acceptable!':'Wrong!'}</strong> Best: <strong>${rec.action}</strong> (${rec.cat})<br>${rec.why}${close?'<br><em>Both raise and call work here.</em>':''}</div>${!correct&&!close?'<div class="tip-box">Position is power! Late seats (CO = "cutoff", BTN = "button") act last post-flop, letting you play more hands. Early seats like UTG ("under the gun") should stick to premium hands.</div>':''}<button class="next-btn" onclick="genPreflop()">Next →</button>`;
+  setTimeout(()=>{const nb=fb.querySelector('.next-btn');if(nb)nb.scrollIntoView({behavior:'smooth',block:'nearest'});else fb.scrollIntoView({behavior:'smooth',block:'end'})},150);
 };
 
 // ===================== EQUITY QUIZ =====================
@@ -745,9 +753,11 @@ window.answerEQ=function(){
   const{eq,explain,tol}=window._q;const g=+document.getElementById('eqV').textContent;const d=Math.abs(g-eq);const correct=d<=tol;
   recordAnswer(correct,'equity');document.querySelector('.submit-btn').style.display='none';
   const acc=d===0?'Spot on!':d<=5?'Excellent!':correct?'Close enough!':'Off the mark.';
-  document.getElementById('feedback').innerHTML=`<div class="explanation"><strong>${acc}</strong> Answer: <strong>${eq}%</strong> (you: ${g}%, off by ${d})<br>${explain}
+  const fb=document.getElementById('feedback');
+  fb.innerHTML=`<div class="explanation"><strong>${acc}</strong> Answer: <strong>${eq}%</strong> (you: ${g}%, off by ${d})<br>${explain}
     <div class="tip-box">Key rules: Pair vs overs ≈ 55/45 · Pair vs underpair ≈ 80/20 · Domination ≈ 70/30 · Suited adds ~3%</div></div>
     <button class="next-btn" onclick="genEquity()">Next →</button>`;
+  setTimeout(()=>{const nb=fb.querySelector('.next-btn');if(nb)nb.scrollIntoView({behavior:'smooth',block:'nearest'});else fb.scrollIntoView({behavior:'smooth',block:'end'})},150);
 };
 
 // ===================== LINGO & ETIQUETTE =====================
@@ -836,7 +846,9 @@ window.answerLingo=function(idx){
     if(i===idx&&!isCorrect)b.classList.add('wrong');
   });
   const icon=cat==='etiquette'?'🤝':'📖';
-  document.getElementById('feedback').innerHTML=`<div class="explanation"><strong>${isCorrect?'Correct!':'Wrong!'}</strong> ${icon} ${explain}</div><button class="next-btn" onclick="genLingo()">Next →</button>`;
+  const fb=document.getElementById('feedback');
+  fb.innerHTML=`<div class="explanation"><strong>${isCorrect?'Correct!':'Wrong!'}</strong> ${icon} ${explain}</div><button class="next-btn" onclick="genLingo()">Next →</button>`;
+  setTimeout(()=>{const nb=fb.querySelector('.next-btn');if(nb)nb.scrollIntoView({behavior:'smooth',block:'nearest'});else fb.scrollIntoView({behavior:'smooth',block:'end'})},150);
 };
 
 // ===================== NAV =====================
