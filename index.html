@@ -382,6 +382,72 @@ header h1 span{background:linear-gradient(135deg,#f59e0b,#ef4444,#ec4899);-webki
   .pn-name{font-size:0.52em}
   .path-arrow{width:10px;font-size:0.6em}
 }
+
+/* ---- Kids Mode Theme ---- */
+body.kids-mode{
+  --bg:#1a0a2e;--surface:#241540;--surface2:#2d1d50;--border:#3d2d60;
+  background-image:radial-gradient(ellipse at 50% 0%,rgba(168,85,247,0.1),transparent 60%),
+    radial-gradient(ellipse at 80% 100%,rgba(236,72,153,0.06),transparent 50%);
+}
+body.kids-mode .card{border-radius:14px;transform:scale(1.05)}
+body.kids-mode .option-btn{border-radius:16px;padding:16px 12px;font-size:0.92em}
+body.kids-mode .next-btn{border-radius:16px;padding:14px 40px;font-size:0.95em}
+body.kids-mode .game-area{border-radius:24px}
+
+@keyframes starBurst{
+  0%{opacity:1;transform:translate(0,0) scale(1)}
+  100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(0.3)}
+}
+@keyframes bounceIn{
+  0%{transform:scale(0.3);opacity:0}
+  50%{transform:scale(1.08)}
+  70%{transform:scale(0.95)}
+  100%{transform:scale(1);opacity:1}
+}
+.star-particle{
+  position:absolute;top:50%;left:50%;font-size:1.5em;pointer-events:none;z-index:50;
+  animation:starBurst 0.7s ease-out forwards;
+  animation-delay:var(--delay,0ms);
+}
+.star-particle:nth-child(6n+1){--tx:60px;--ty:-80px}
+.star-particle:nth-child(6n+2){--tx:-70px;--ty:-60px}
+.star-particle:nth-child(6n+3){--tx:80px;--ty:20px}
+.star-particle:nth-child(6n+4){--tx:-60px;--ty:40px}
+.star-particle:nth-child(6n+5){--tx:30px;--ty:70px}
+.star-particle:nth-child(6n){--tx:-40px;--ty:-90px}
+body.kids-mode .fade-in{animation:bounceIn 0.4s ease}
+
+/* ---- Profile Picker ---- */
+.profile-picker{text-align:center;padding:40px 16px}
+.profile-picker h2{font-size:1.6em;font-weight:900;margin-bottom:16px}
+.profile-picker input{
+  display:block;margin:16px auto;padding:14px 20px;width:100%;max-width:300px;
+  background:var(--surface2);border:1.5px solid var(--border);border-radius:14px;
+  color:var(--text);font-size:1em;font-family:inherit;text-align:center;outline:none;
+}
+.profile-picker input:focus{border-color:var(--blue)}
+.profile-picker .mode-btns{display:flex;gap:12px;justify-content:center;margin-top:20px;flex-wrap:wrap}
+.profile-picker .mode-btn{
+  padding:20px 28px;background:var(--surface2);border:2px solid var(--border);
+  border-radius:18px;color:var(--text);cursor:pointer;font-size:1.1em;font-weight:700;
+  font-family:inherit;transition:all 0.2s;min-width:160px;
+}
+.profile-picker .mode-btn:hover{border-color:var(--blue);transform:translateY(-3px);box-shadow:var(--glow-blue)}
+.profile-switch{font-size:0.72em;color:var(--muted);margin-top:6px;cursor:pointer}
+.profile-switch:hover{color:var(--text)}
+.profile-dropdown{
+  position:absolute;top:100%;left:50%;transform:translateX(-50%);
+  background:var(--surface);border:1px solid var(--border);border-radius:14px;
+  padding:10px;min-width:220px;z-index:100;box-shadow:0 8px 32px rgba(0,0,0,0.4);
+  text-align:left;
+}
+.profile-dropdown .pd-item{
+  padding:10px 14px;border-radius:10px;cursor:pointer;font-size:0.85em;font-weight:600;
+  transition:background 0.15s;display:flex;align-items:center;gap:8px;
+}
+.profile-dropdown .pd-item:hover{background:var(--surface2)}
+.profile-dropdown .pd-item.active{color:var(--blue)}
+.profile-dropdown .pd-add{color:var(--muted);border-top:1px solid var(--border);margin-top:6px;padding-top:10px}
 </style>
 </head>
 <body>
@@ -389,6 +455,7 @@ header h1 span{background:linear-gradient(135deg,#f59e0b,#ef4444,#ec4899);-webki
   <header>
     <h1><span>Poker Trainer</span></h1>
     <div class="subtitle">Master odds & strategy, one skill at a time</div>
+    <div id="profileSwitch" class="profile-switch"></div>
   </header>
   <div id="skillPath"></div>
   <div class="stats-bar" id="statsBar"></div>
@@ -405,6 +472,230 @@ function shuffle(a){for(let i=a.length-1;i>0;i--){const j=rand(i+1);[a[i],a[j]]=
 function makeDeck(){const d=[];for(const s of SUITS)for(const r of RANKS)d.push({rank:r,suit:s});return shuffle(d)}
 function cardHTML(c){const red=c.suit==='♥'||c.suit==='♦';const d=RD[c.rank]||c.rank;return`<div class="card ${red?'red':'black'}"><span class="rank">${d}</span><span class="suit">${c.suit}</span></div>`}
 function cardsHTML(cards){return'<div class="cards-row">'+cards.map(cardHTML).join('')+'</div>'}
+
+// ===================== PROFILE SYSTEM =====================
+function generateId(){return'p_'+Date.now()+'_'+rand(9999)}
+function getProfiles(){try{return JSON.parse(localStorage.getItem('pokerProfiles'))||[]}catch(e){return[]}}
+function saveProfiles(profiles){localStorage.setItem('pokerProfiles',JSON.stringify(profiles))}
+function getActiveProfileId(){return localStorage.getItem('activeProfile')||null}
+function setActiveProfileId(id){localStorage.setItem('activeProfile',id)}
+
+function defaultState(){
+  return{
+    correct:0,total:0,streak:0,bestStreak:0,mode:null,
+    skills:{},
+    dailyHistory:[],
+    speedBests:{},
+  };
+}
+
+function migrateOldData(){
+  const old=localStorage.getItem('pokerTrainer2');
+  if(!old)return false;
+  try{
+    const d=JSON.parse(old);
+    if(!d||!d.skills)return false;
+    const id=generateId();
+    const profile={id,name:'Player',kidsMode:false,...d};
+    saveProfiles([profile]);
+    setActiveProfileId(id);
+    localStorage.removeItem('pokerTrainer2');
+    return true;
+  }catch(e){return false}
+}
+
+function createProfile(name,kidsMode){
+  const profiles=getProfiles();
+  const id=generateId();
+  const profile={id,name,kidsMode,...defaultState()};
+  profiles.push(profile);
+  saveProfiles(profiles);
+  setActiveProfileId(id);
+  return profile;
+}
+
+function loadActiveProfile(){
+  const profiles=getProfiles();
+  const id=getActiveProfileId();
+  if(!id||!profiles.length)return null;
+  return profiles.find(p=>p.id===id)||profiles[0];
+}
+
+function saveCurrentProfile(){
+  const profiles=getProfiles();
+  const idx=profiles.findIndex(p=>p.id===state.id);
+  if(idx>=0){
+    profiles[idx]={...profiles[idx],...state};
+    saveProfiles(profiles);
+  }
+}
+
+// Init profiles
+let state;
+(function initProfiles(){
+  const profiles=getProfiles();
+  if(profiles.length===0){
+    // Check for old data migration
+    if(migrateOldData()){
+      state=loadActiveProfile();
+    } else {
+      // Will show profile picker
+      state=defaultState();
+      return;
+    }
+  } else {
+    state=loadActiveProfile();
+    if(!state){
+      setActiveProfileId(profiles[0].id);
+      state=profiles[0];
+    }
+  }
+})();
+
+function save(){
+  if(state.id){
+    saveCurrentProfile();
+  }
+}
+
+function isKids(){return state.kidsMode===true}
+
+function applyKidsMode(){
+  if(isKids()){
+    document.body.classList.add('kids-mode');
+  } else {
+    document.body.classList.remove('kids-mode');
+  }
+}
+
+function renderProfileSwitch(){
+  const el=document.getElementById('profileSwitch');
+  if(!state.id){el.innerHTML='';return}
+  const icon=isKids()?'🎒':'🎩';
+  el.innerHTML=`Playing as ${state.name} ${icon} · <span onclick="showProfileDropdown(event)" style="cursor:pointer;color:var(--blue)">Switch</span>`;
+}
+
+window.showProfileDropdown=function(e){
+  e.stopPropagation();
+  // Remove existing dropdown
+  const existing=document.querySelector('.profile-dropdown');
+  if(existing){existing.remove();return}
+  const profiles=getProfiles();
+  const header=document.querySelector('header');
+  const dd=document.createElement('div');
+  dd.className='profile-dropdown';
+  dd.innerHTML=profiles.map(p=>`<div class="pd-item ${p.id===state.id?'active':''}" onclick="switchProfile('${p.id}')">${p.kidsMode?'🎒':'🎩'} ${p.name}${p.id===state.id?' ✓':''}</div>`).join('')
+    +`<div class="pd-item pd-add" onclick="showProfilePicker()">+ Add Player</div>`;
+  header.style.position='relative';
+  header.appendChild(dd);
+  setTimeout(()=>document.addEventListener('click',function _cl(){dd.remove();document.removeEventListener('click',_cl)},{once:true}),10);
+};
+
+window.switchProfile=function(id){
+  const profiles=getProfiles();
+  const p=profiles.find(pr=>pr.id===id);
+  if(!p)return;
+  setActiveProfileId(id);
+  state=p;
+  applyKidsMode();
+  renderProfileSwitch();
+  renderStatsBar();renderSkillPath();showIntro();
+  const dd=document.querySelector('.profile-dropdown');if(dd)dd.remove();
+};
+
+function showProfilePicker(){
+  const dd=document.querySelector('.profile-dropdown');if(dd)dd.remove();
+  document.getElementById('skillPath').innerHTML='';
+  document.getElementById('statsBar').innerHTML='';
+  document.getElementById('profileSwitch').innerHTML='';
+  const area=document.getElementById('gameArea');
+  area.innerHTML=`<div class="profile-picker fade-in">
+    <h2>Who's Playing? 🃏</h2>
+    <p style="color:var(--muted);font-size:0.9em">Enter your first name to get started</p>
+    <input type="text" id="profileName" placeholder="Your first name" maxlength="20" autocomplete="off">
+    <div class="mode-btns">
+      <button class="mode-btn" onclick="createAndStart(true)">🎒 I'm a Kid!</button>
+      <button class="mode-btn" onclick="createAndStart(false)">🎩 I'm a Grown-Up!</button>
+    </div>
+  </div>`;
+  setTimeout(()=>{const inp=document.getElementById('profileName');if(inp)inp.focus()},100);
+}
+
+window.createAndStart=function(kidsMode){
+  const inp=document.getElementById('profileName');
+  const name=(inp?inp.value.trim():'')||'Player';
+  const profile=createProfile(name,kidsMode);
+  state=profile;
+  applyKidsMode();
+  renderProfileSwitch();
+  renderStatsBar();renderSkillPath();showIntro();
+};
+
+// ===================== KIDS MODE HELPERS =====================
+const ANIMALS=[['🦊','Fox'],['🐻','Bear'],['🐼','Panda'],['🦁','Lion'],['🐯','Tiger'],['🐸','Frog'],['🦉','Owl'],['🐧','Penguin']];
+
+const KID_MASTERY_WINDOW=8;
+const KID_MASTERY_THRESHOLD=5;
+
+function getMasteryWindow(){return isKids()?KID_MASTERY_WINDOW:MASTERY_WINDOW}
+function getMasteryThreshold(){return isKids()?KID_MASTERY_THRESHOLD:MASTERY_THRESHOLD}
+
+function kidFeedbackCorrect(){
+  const msgs=['🎉 Amazing!','⭐ You\'re a star!','🔥 On fire!','💪 Nailed it!','🌟 Brilliant!','🎊 Awesome!','👏 Great job!'];
+  return msgs[rand(msgs.length)];
+}
+
+function kidFeedbackWrong(){
+  const msgs=['Almost! 💪','Good try! 🌟','So close! 🎯','Keep going! 🚀','Nice effort! 👍'];
+  return msgs[rand(msgs.length)];
+}
+
+function kidHandName(name){
+  const map={'Straight Flush':'Straight Flush 🌈','Four of a Kind':'Four of a Kind 💎','Full House':'Full House 🏠','Flush':'Flush 🌊','Straight':'Straight ➡️','Three of a Kind':'Three of a Kind 🎲','Two Pair':'Two Pairs ✌️','One Pair':'One Pair','High Card':'High Card'};
+  return isKids()?(map[name]||name):name;
+}
+
+function getPlayerNames(){
+  if(!isKids())return['Player 1','Player 2'];
+  const pair=ANIMALS[rand(ANIMALS.length)];
+  let pair2;do{pair2=ANIMALS[rand(ANIMALS.length)]}while(pair2===pair);
+  return[`${pair[0]} ${pair[1]}`,`${pair2[0]} ${pair2[1]}`];
+}
+
+function kidRank(stars){
+  if(stars>=100)return'Poker Champ 🏆';
+  if(stars>=60)return'Card Shark 🦈';
+  if(stars>=30)return'Rising Star ⭐';
+  if(stars>=10)return'Card Learner 📚';
+  return'Beginner 🌱';
+}
+
+function showStarBurst(){
+  if(!isKids())return;
+  const ga=document.querySelector('.game-area');
+  if(!ga)return;
+  for(let i=0;i<6;i++){
+    const star=document.createElement('div');
+    star.className='star-particle';
+    star.textContent='⭐';
+    star.style.setProperty('--delay',(i*50)+'ms');
+    ga.appendChild(star);
+    setTimeout(()=>star.remove(),800);
+  }
+}
+
+function feedbackCorrect(){return isKids()?kidFeedbackCorrect():'Correct!'}
+function feedbackWrong(){return isKids()?kidFeedbackWrong():'Wrong!'}
+function nextBtnText(){return isKids()?'Next Card! →':'Next →'}
+
+const KID_SKILL_NAMES={
+  handRank:'🃏 Card Power',
+  lingo:'🗣️ Poker Words',
+  outs:'🔢 Helper Cards',
+  potOdds:'💰 Smart Bets',
+  preflop:'🎯 First Move',
+  equity:'📊 Win Chances'
+};
 
 // ===================== HAND EVAL =====================
 function evalHand(cards){const cs=getCombos(cards,5);let b=[0];for(const c of cs){const v=eval5(c);if(cmpH(v,b)>0)b=v}return b}
@@ -431,14 +722,8 @@ const HN={9:'Straight Flush',8:'Four of a Kind',7:'Full House',6:'Flush',5:'Stra
 function handName(e){return HN[e[0]]||'High Card'}
 
 // ===================== PROGRESSION: SKILL MASTERY =====================
-/*
-  Each skill has tiers. To unlock the next skill, you must pass the current skill's
-  mastery gate: get N correct out of the last M attempts (a rolling window).
-  Within a skill, harder tiers unlock the same way.
-  This tests DEMONSTRATED ABILITY, not grind volume.
-*/
-const MASTERY_WINDOW = 10; // last N attempts
-const MASTERY_THRESHOLD = 7; // need 7/10 correct
+const MASTERY_WINDOW = 10;
+const MASTERY_THRESHOLD = 7;
 
 const SKILLS = [
   { id:'handRank', name:'Hand Rankings', icon:'🃏',
@@ -479,19 +764,6 @@ const SKILLS = [
     ]},
 ];
 
-function defaultState(){
-  return{
-    correct:0,total:0,streak:0,bestStreak:0,mode:null,
-    skills:{},
-    dailyHistory:[],   // [{date:'2026-03-28',score:8,total:10,breakdown:{handRank:{c:2,t:2},...}}]
-    speedBests:{},      // {handRank:{score:12,total:15},...}
-  };
-}
-
-function save(){localStorage.setItem('pokerTrainer2',JSON.stringify(state))}
-function load(){try{const d=JSON.parse(localStorage.getItem('pokerTrainer2'));if(d&&d.skills)return d}catch(e){}return null}
-let state=load()||defaultState();
-
 // --- Skill state helpers ---
 function getSkillState(id){
   if(!state.skills[id]) state.skills[id]={history:[],tierHistory:[[],[],[]]};
@@ -501,13 +773,13 @@ function getSkillState(id){
 }
 
 function rollingScore(arr){
-  const recent=arr.slice(-MASTERY_WINDOW);
+  const recent=arr.slice(-getMasteryWindow());
   return recent.filter(Boolean).length;
 }
 
 function isMastered(arr){
-  if(arr.length<MASTERY_WINDOW) return false;
-  return rollingScore(arr)>=MASTERY_THRESHOLD;
+  if(arr.length<getMasteryWindow()) return false;
+  return rollingScore(arr)>=getMasteryThreshold();
 }
 
 function isSkillUnlocked(idx){
@@ -550,15 +822,19 @@ function recordAnswer(correct,skillId){
 
   // Check if skill just got mastered (unlocking next)
   const skillIdx=SKILLS.findIndex(sk=>sk.id===skillId);
-  const wasMastered=s.history.length>MASTERY_WINDOW&&isMastered(s.history.slice(0,-1));
+  const mw=getMasteryWindow();
+  const wasMastered=s.history.length>mw&&isMastered(s.history.slice(0,-1));
   const nowMastered=isMastered(s.history);
 
   save();
   renderStatsBar();
   renderSkillPath();
 
-  if(correct&&state.streak>=3){
-    showToast(`${state.streak} streak!`,'streak');
+  if(correct){
+    showStarBurst();
+    if(state.streak>=3){
+      showToast(`${state.streak} streak!`,'streak');
+    }
   }
 
   if(!wasMastered&&nowMastered&&skillIdx<SKILLS.length-1){
@@ -567,7 +843,7 @@ function recordAnswer(correct,skillId){
   }
 
   // Check tier advancement
-  const wasTierMastered=s.tierHistory[tier].length>MASTERY_WINDOW&&isMastered(s.tierHistory[tier].slice(0,-1));
+  const wasTierMastered=s.tierHistory[tier].length>mw&&isMastered(s.tierHistory[tier].slice(0,-1));
   const nowTierMastered=isMastered(s.tierHistory[tier]);
   if(!wasTierMastered&&nowTierMastered&&tier<2){
     const nextTier=SKILLS[skillIdx].tiers[tier+1];
@@ -595,32 +871,43 @@ function showUnlock(skill){
 }
 
 function renderStatsBar(){
-  const acc=state.total?Math.round(state.correct/state.total*100)+'%':'-';
-  document.getElementById('statsBar').innerHTML=`
-    <div class="stat"><div class="stat-val" style="color:var(--green)">${state.correct}</div><div class="stat-lbl">Correct</div></div>
-    <div class="stat"><div class="stat-val">${state.total}</div><div class="stat-lbl">Total</div></div>
-    <div class="stat"><div class="stat-val" style="color:var(--amber)">${state.streak}${state.streak>=3?'🔥':''}</div><div class="stat-lbl">Streak</div></div>
-    <div class="stat"><div class="stat-val" style="color:var(--blue)">${acc}</div><div class="stat-lbl">Accuracy</div></div>`;
+  if(isKids()){
+    const rank=kidRank(state.correct);
+    document.getElementById('statsBar').innerHTML=`
+      <div class="stat"><div class="stat-val" style="color:var(--amber)">⭐ ${state.correct}</div><div class="stat-lbl">Stars</div></div>
+      <div class="stat"><div class="stat-val">${state.total}</div><div class="stat-lbl">Played</div></div>
+      <div class="stat"><div class="stat-val" style="color:var(--amber)">${state.streak}${state.streak>=3?'🔥':''}</div><div class="stat-lbl">Streak</div></div>
+      <div class="stat"><div class="stat-val" style="color:var(--purple);font-size:0.7em">${rank}</div><div class="stat-lbl">Rank</div></div>`;
+  } else {
+    const acc=state.total?Math.round(state.correct/state.total*100)+'%':'-';
+    document.getElementById('statsBar').innerHTML=`
+      <div class="stat"><div class="stat-val" style="color:var(--green)">${state.correct}</div><div class="stat-lbl">Correct</div></div>
+      <div class="stat"><div class="stat-val">${state.total}</div><div class="stat-lbl">Total</div></div>
+      <div class="stat"><div class="stat-val" style="color:var(--amber)">${state.streak}${state.streak>=3?'🔥':''}</div><div class="stat-lbl">Streak</div></div>
+      <div class="stat"><div class="stat-val" style="color:var(--blue)">${acc}</div><div class="stat-lbl">Accuracy</div></div>`;
+  }
 }
 
 function masteryRingHTML(arr){
+  const mw=getMasteryWindow(),mt=getMasteryThreshold();
   const score=rollingScore(arr);
-  const total=Math.max(arr.length,1);
-  const pct=arr.length<MASTERY_WINDOW
-    ? Math.min(score/MASTERY_THRESHOLD,1)
-    : score/MASTERY_WINDOW;
+  const pct=arr.length<mw
+    ? Math.min(score/mt,1)
+    : score/mw;
   const r=14,circ=2*Math.PI*r;
   const offset=circ*(1-pct);
-  const color=pct>=MASTERY_THRESHOLD/MASTERY_WINDOW?'var(--green)':pct>0.4?'var(--amber)':'var(--muted)';
+  const color=pct>=mt/mw?'var(--green)':pct>0.4?'var(--amber)':'var(--muted)';
   return`<div class="mastery-ring"><svg viewBox="0 0 36 36"><circle class="bg" cx="18" cy="18" r="${r}"/><circle class="fill" cx="18" cy="18" r="${r}" stroke="${color}" stroke-dasharray="${circ}" stroke-dashoffset="${offset}"/></svg><div class="pct" style="color:${color}">${score}</div></div>`;
 }
 
 function renderSkillPath(){
+  const mw=getMasteryWindow(),mt=getMasteryThreshold();
   let html='<div class="skill-path"><div class="skill-path-label">Skill Track — master each to unlock the next</div><div class="path-nodes">';
   SKILLS.forEach((sk,i)=>{
     const status=getSkillStatus(i);
     const s=getSkillState(sk.id);
     const active=state.mode===sk.id;
+    const displayName=isKids()?(KID_SKILL_NAMES[sk.id]||sk.name):sk.name;
     let statusHTML='',cls=status;
     if(active)cls='active';
 
@@ -630,16 +917,16 @@ function renderSkillPath(){
       statusHTML=`<div class="pn-status done">✓ Mastered</div>`;
     }else{
       const score=rollingScore(s.history);
-      const need=Math.max(0,MASTERY_THRESHOLD-score);
+      const need=Math.max(0,mt-score);
       statusHTML=need>0
-        ?`<div class="pn-status progress">${score}/${MASTERY_WINDOW}</div>`
+        ?`<div class="pn-status progress">${score}/${mw}</div>`
         :`<div class="pn-status done">✓ Mastered</div>`;
     }
 
     if(i>0)html+=`<div class="path-arrow">›</div>`;
     html+=`<div class="path-node ${cls}" onclick="${status!=='locked'?`setMode('${sk.id}')`:''}">
       <div class="pn-icon">${sk.icon}</div>
-      <div class="pn-name">${sk.name}</div>
+      <div class="pn-name">${displayName}</div>
       ${status!=='locked'?masteryRingHTML(s.history):''}
       ${statusHTML}
     </div>`;
@@ -649,21 +936,22 @@ function renderSkillPath(){
 }
 
 function masteryBarHTML(skillId){
+  const mw=getMasteryWindow(),mt=getMasteryThreshold();
   const s=getSkillState(skillId);
   const tier=getSkillTier(skillId);
   const tierArr=s.tierHistory[tier];
   const score=rollingScore(tierArr);
-  const pct=tierArr.length<MASTERY_WINDOW
-    ?Math.min((score/MASTERY_THRESHOLD)*100,100)
-    :(score/MASTERY_WINDOW)*100;
+  const pct=tierArr.length<mw
+    ?Math.min((score/mt)*100,100)
+    :(score/mw)*100;
   const tierInfo=SKILLS.find(sk=>sk.id===skillId).tiers[tier];
   const color=pct>=70?'var(--green)':pct>=40?'var(--amber)':'var(--muted)';
   const overall=rollingScore(s.history);
   return`<div class="mastery-progress">
     <span class="diff-badge ${tierInfo.diff}">${tierInfo.name}</span>
     <div class="mp-bar"><div class="mp-fill" style="width:${pct}%;background:${color}"></div></div>
-    <span class="mp-text" style="color:${color}">${score}/${MASTERY_WINDOW}</span>
-    <span style="color:var(--muted);font-size:0.7em">Overall ${overall}/${MASTERY_WINDOW}</span>
+    <span class="mp-text" style="color:${color}">${score}/${mw}</span>
+    <span style="color:var(--muted);font-size:0.7em">Overall ${overall}/${mw}</span>
   </div>`;
 }
 
@@ -695,27 +983,34 @@ function genHandRank(){
   }
 
   const cmp=cmpH(e1,e2),correctIdx=cmp>0?0:cmp<0?1:2;
+  const names=getPlayerNames();
+  const boardLabel=isKids()?'Cards on the Table':'Community Cards';
+  const questionText=isKids()?'Who has the better cards?':'Which hand wins?';
   const area=document.getElementById('gameArea');
   area.innerHTML=`<div class="fade-in">${masteryBarHTML('handRank')}
-    <div class="section-label">Community Cards</div>${cardsHTML(board)}
+    <div class="section-label">${boardLabel}</div>${cardsHTML(board)}
     <div class="hand-grid">
-      <div class="hand-option" onclick="answerHR(0)" id="ho0"><div class="section-label">Player 1</div>${cardsHTML(hand1)}</div>
-      <div class="hand-option" onclick="answerHR(1)" id="ho1"><div class="section-label">Player 2</div>${cardsHTML(hand2)}</div>
+      <div class="hand-option" onclick="answerHR(0)" id="ho0"><div class="section-label">${names[0]}</div>${cardsHTML(hand1)}</div>
+      <div class="hand-option" onclick="answerHR(1)" id="ho1"><div class="section-label">${names[1]}</div>${cardsHTML(hand2)}</div>
     </div>
     <div style="text-align:center"><button class="option-btn" onclick="answerHR(2)" id="ho2" style="max-width:160px;margin:0 auto;font-size:0.8em">Tie / Split</button></div>
-    <div class="question">Which hand wins?</div>
+    <div class="question">${questionText}</div>
     <div id="feedback"></div></div>`;
-  window._q={correctIdx,n1:handName(e1),n2:handName(e2)};
+  window._q={correctIdx,n1:handName(e1),n2:handName(e2),names};
 }
 window.answerHR=function(idx){
-  const{correctIdx,n1,n2}=window._q;const correct=idx===correctIdx;
+  const{correctIdx,n1,n2,names}=window._q;const correct=idx===correctIdx;
   if(state.mode==='speed'){speedAnswer(correct);return}
   recordAnswer(correct,'handRank');
   document.querySelectorAll('.hand-option,#ho2').forEach((el,i)=>{el.classList.add('disabled');el.onclick=null;if(i===correctIdx)el.classList.add('correct');if(i===idx&&!correct)el.classList.add('wrong')});
-  const w=correctIdx===2?'Split pot!':correctIdx===0?'Player 1':'Player 2';
-  const lingo=n1==='Full House'||n2==='Full House'?' (A full house is also called a "boat".)':n1==='Three of a Kind'||n2==='Three of a Kind'?' (Three of a kind with a pocket pair is called a "set"; with one card + board pair it\'s "trips".)':'';
+  const w=correctIdx===2?'Split pot!':correctIdx===0?names[0]:names[1];
+  const dn1=kidHandName(n1),dn2=kidHandName(n2);
+  const lingo=!isKids()&&(n1==='Full House'||n2==='Full House')?' (A full house is also called a "boat".)':!isKids()&&(n1==='Three of a Kind'||n2==='Three of a Kind')?' (Three of a kind with a pocket pair is called a "set"; with one card + board pair it\'s "trips".)':'';
   const fb=document.getElementById('feedback');
-  fb.innerHTML=`<div class="explanation ${correct?'explanation-correct':'explanation-wrong'}"><strong>${correct?'Correct!':'Wrong!'}</strong> ${w}<br>P1: <strong>${n1}</strong> &nbsp;·&nbsp; P2: <strong>${n2}</strong>${lingo}</div><button class="next-btn" onclick="${state.mode==='dailyQuiz'?'quizNext()':'genHandRank()'}">Next →</button>`;
+  fb.innerHTML=`<div class="explanation ${correct?'explanation-correct':'explanation-wrong'}"><strong>${feedbackCorrect()&&correct?feedbackCorrect():feedbackWrong()}</strong> ${w}<br>${names[0]}: <strong>${dn1}</strong> &nbsp;·&nbsp; ${names[1]}: <strong>${dn2}</strong>${lingo}</div><button class="next-btn" onclick="${state.mode==='dailyQuiz'?'quizNext()':'genHandRank()'}">Next →</button>`;
+  // Fix: use correct feedback
+  fb.querySelector('.explanation strong').textContent=correct?feedbackCorrect():feedbackWrong();
+  fb.querySelector('.next-btn').textContent=nextBtnText();
   setTimeout(()=>{const nb=fb.querySelector('.next-btn');if(nb){const r=nb.getBoundingClientRect();if(r.bottom>window.innerHeight)window.scrollBy({top:r.bottom-window.innerHeight+24,behavior:'smooth'})}},300);
 };
 
@@ -731,24 +1026,35 @@ function genOuts(){
   const tier=getSkillTier('outs');const deck=makeDeck();
   const pools=[[makeFlushDraw,makeOESD],[makeFlushDraw,makeOESD,makeGutshot,makeOvercards,makeComboDraw],[makeGutshot,makeComboDraw,makeDiscountOuts,makeOvercards]];
   const sc=pools[tier][rand(pools[tier].length)](deck);
+  const questionText=isKids()?'How many helper cards?':'How many outs?';
+  const submitText=isKids()?'Lock It In! 🔒':'Submit';
   const area=document.getElementById('gameArea');
   area.innerHTML=`<div class="fade-in">${masteryBarHTML('outs')}
     <div class="section-label">Your Hand</div>${cardsHTML(sc.hand)}
     <div class="section-label">Flop</div>${cardsHTML(sc.board)}
-    <div class="question">How many outs?<br><small>${sc.name}</small></div>
+    <div class="question">${questionText}<br><small>${sc.name}</small></div>
     <div class="slider-container"><div class="slider-value" id="sv">8</div>
     <input type="range" min="1" max="20" value="8" oninput="document.getElementById('sv').textContent=this.value"></div>
-    <button class="submit-btn" onclick="answerOuts()">Submit</button>
+    <button class="submit-btn" onclick="answerOuts()">${submitText}</button>
     <div id="feedback"></div></div>`;
-  window._q={outs:sc.outs,explain:sc.explain};
+  window._q={outs:sc.outs,explain:sc.explain,name:sc.name};
 }
 window.answerOuts=function(){
-  const{outs,explain}=window._q;const g=+document.getElementById('sv').textContent;const d=Math.abs(g-outs);const correct=d<=1;
+  const{outs,explain,name}=window._q;const g=+document.getElementById('sv').textContent;
+  const tol=isKids()&&getSkillTier('outs')===0?2:1;
+  const d=Math.abs(g-outs);const correct=d<=tol;
   if(state.mode==='speed'){speedAnswer(correct);return}
   recordAnswer(correct,'outs');document.querySelector('.submit-btn').style.display='none';
   const fb=document.getElementById('feedback');
   const nextFn=state.mode==='dailyQuiz'?'quizNext()':'genOuts()';
-  fb.innerHTML=`<div class="explanation ${correct?'explanation-correct':'explanation-wrong'}"><strong>${correct?(d===0?'Exact!':'Close enough!'):'Not quite.'}</strong> Answer: <strong>${outs} outs</strong> (you: ${g})<br>${explain}<br><br><strong>Rule of 2 & 4:</strong> On the flop, multiply outs ×4 ≈ ${outs*4}% equity by the river. On the turn, ×2 ≈ ${outs*2}%. If you have 0 outs, you\'re "drawing dead."</div><button class="next-btn" onclick="${nextFn}">Next →</button>`;
+  let explainText;
+  if(isKids()){
+    const suitName=name.includes('Flush')?'suited':'helpful';
+    explainText=`Count how many ${suitName} cards are left that would help you win! Those are your helper cards 🃏<br>Answer: <strong>${outs} helper cards</strong> (you: ${g})`;
+  } else {
+    explainText=`Answer: <strong>${outs} outs</strong> (you: ${g})<br>${explain}<br><br><strong>Rule of 2 & 4:</strong> On the flop, multiply outs ×4 ≈ ${outs*4}% equity by the river. On the turn, ×2 ≈ ${outs*2}%. If you have 0 outs, you're "drawing dead."`;
+  }
+  fb.innerHTML=`<div class="explanation ${correct?'explanation-correct':'explanation-wrong'}"><strong>${correct?feedbackCorrect():feedbackWrong()}</strong> ${explainText}</div><button class="next-btn" onclick="${nextFn}">${nextBtnText()}</button>`;
   setTimeout(()=>{const nb=fb.querySelector('.next-btn');if(nb){const r=nb.getBoundingClientRect();if(r.bottom>window.innerHeight)window.scrollBy({top:r.bottom-window.innerHeight+24,behavior:'smooth'})}},300);
 };
 
@@ -768,25 +1074,39 @@ function genPotOdds(){
   if(tier===2){const imp=(2+rand(6))*10;const eff=(callAmt/(totalPot+callAmt+imp))*100;shouldCall=equity>eff;impliedNote=`<br><strong>Implied odds:</strong> Expect ~$${imp} more → effective needed ${eff.toFixed(1)}%.`}
   else{shouldCall=equity>potOdds}
 
+  const callBtn=isKids()?'Stay In! 👍':'Call';
+  const foldBtn=isKids()?'Fold 👋':'Fold';
+  const questionText=isKids()?'Is it a good deal to stay in?':`Should you call $${bet}?`;
   const area=document.getElementById('gameArea');
   area.innerHTML=`<div class="fade-in">${masteryBarHTML('potOdds')}
     <div class="section-label">Your Hand</div>${cardsHTML(sc.hand)}
     <div class="section-label">Flop</div>${cardsHTML(sc.board)}
     <div style="text-align:center;margin:12px 0"><span style="font-size:1.2em">Pot: <strong>$${pot}</strong></span>&nbsp;&nbsp;<span style="font-size:1.2em;color:var(--red)">Bet: <strong>$${bet}</strong></span></div>
-    <div class="question">Should you call $${bet}?<br><small>${sc.name} · ~${sc.outs} outs</small></div>
+    <div class="question">${questionText}<br><small>${sc.name} · ~${sc.outs} outs</small></div>
     <div class="options" style="max-width:280px;margin:10px auto">
-      <button class="option-btn" onclick="answerPO(true)">Call</button>
-      <button class="option-btn" onclick="answerPO(false)">Fold</button>
+      <button class="option-btn" onclick="answerPO(true)">${callBtn}</button>
+      <button class="option-btn" onclick="answerPO(false)">${foldBtn}</button>
     </div><div id="feedback"></div></div>`;
-  window._q={shouldCall,potOdds,equity,outs:sc.outs,callAmt,totalPot,impliedNote};
+  window._q={shouldCall,potOdds,equity,outs:sc.outs,callAmt,totalPot,impliedNote,bet};
 }
 window.answerPO=function(called){
-  const{shouldCall,potOdds,equity,outs,callAmt,totalPot,impliedNote}=window._q;const correct=called===shouldCall;
+  const{shouldCall,potOdds,equity,outs,callAmt,totalPot,impliedNote,bet}=window._q;const correct=called===shouldCall;
   if(state.mode==='speed'){speedAnswer(correct);return}
   recordAnswer(correct,'potOdds');document.querySelectorAll('.option-btn').forEach(b=>b.disabled=true);
   const fb=document.getElementById('feedback');
   const nextFn=state.mode==='dailyQuiz'?'quizNext()':'genPotOdds()';
-  fb.innerHTML=`<div class="explanation ${correct?'explanation-correct':'explanation-wrong'}"><strong>${correct?'Correct!':'Wrong!'}</strong> You should <strong>${shouldCall?'CALL':'FOLD'}</strong>.<br><br><strong>Pot odds:</strong> $${callAmt} to win $${totalPot} = ${potOdds.toFixed(1)}% needed<br><strong>Equity:</strong> ~${outs} × 4 = ~${equity}%${impliedNote}<br><br>${equity>potOdds?'Equity > pot odds → this is a "+EV" (positive expected value) call.':'Equity < pot odds → this is "-EV", so folding saves chips long-term.'}</div><button class="next-btn" onclick="${nextFn}">Next →</button>`;
+  let explainHTML;
+  if(isKids()){
+    const deal=shouldCall?'good':'bad';
+    explainHTML=`<strong>${feedbackCorrect()&&correct?feedbackCorrect():feedbackWrong()}</strong> You'd risk $${callAmt} to win $${totalPot}. Your helper cards give you about a ${equity}% chance of winning. That's a <strong>${deal} deal</strong>!`;
+    fb.querySelector||0;// placeholder
+  } else {
+    explainHTML=`<strong>${correct?'Correct!':'Wrong!'}</strong> You should <strong>${shouldCall?'CALL':'FOLD'}</strong>.<br><br><strong>Pot odds:</strong> $${callAmt} to win $${totalPot} = ${potOdds.toFixed(1)}% needed<br><strong>Equity:</strong> ~${outs} × 4 = ~${equity}%${impliedNote}<br><br>${equity>potOdds?'Equity > pot odds → this is a "+EV" (positive expected value) call.':'Equity < pot odds → this is "-EV", so folding saves chips long-term.'}`;
+  }
+  fb.innerHTML=`<div class="explanation ${correct?'explanation-correct':'explanation-wrong'}">${isKids()?'':''}</div><button class="next-btn" onclick="${nextFn}">${nextBtnText()}</button>`;
+  fb.querySelector('.explanation').innerHTML=isKids()
+    ?`<strong>${correct?feedbackCorrect():feedbackWrong()}</strong> You'd risk $${callAmt} to win $${totalPot}. Your helper cards give you about a ${equity}% chance of winning. That's a <strong>${shouldCall?'good':'bad'} deal</strong>!`
+    :`<strong>${correct?'Correct!':'Wrong!'}</strong> You should <strong>${shouldCall?'CALL':'FOLD'}</strong>.<br><br><strong>Pot odds:</strong> $${callAmt} to win $${totalPot} = ${potOdds.toFixed(1)}% needed<br><strong>Equity:</strong> ~${outs} × 4 = ~${equity}%${impliedNote}<br><br>${equity>potOdds?'Equity > pot odds → this is a "+EV" (positive expected value) call.':'Equity < pot odds → this is "-EV", so folding saves chips long-term.'}`;
   setTimeout(()=>{const nb=fb.querySelector('.next-btn');if(nb){const r=nb.getBoundingClientRect();if(r.bottom>window.innerHeight)window.scrollBy({top:r.bottom-window.innerHeight+24,behavior:'smooth'})}},300);
 };
 
@@ -817,29 +1137,41 @@ function preflopAction(hand,pos,tier){
 function genPreflop(){
   const tier=getSkillTier('preflop');const deck=makeDeck();
   const hand=[deck[0],deck[1]];const pos=POS[rand(POS.length)];const rec=preflopAction(hand,pos,tier);
+  const raiseBtn=isKids()?'Raise 💪':'Raise';
+  const callBtn=isKids()?'Call 🤝':'Call';
+  const foldBtn=isKids()?'Fold 👋':'Fold';
+  const questionText=isKids()?'What\'s your first move?':'What\'s your move?';
+  const earlyLate=pos==='BTN'||pos==='CO'?'late':pos==='UTG'||pos==='UTG+1'?'early':'middle';
+  const posLabel=isKids()?`You're sitting in the ${pos} seat — that means you act ${earlyLate}`:`Position: ${pos} ${pos==='BTN'||pos==='CO'?'(Late)':pos==='UTG'||pos==='UTG+1'?'(Early)':''}`;
   const area=document.getElementById('gameArea');
   area.innerHTML=`<div class="fade-in">${masteryBarHTML('preflop')}
     <div class="position-diagram">${POS.map(p=>`<div class="seat ${p===pos?'highlight':''}">${p}</div>`).join('')}</div>
-    <div class="section-label">Position: ${pos} ${pos==='BTN'||pos==='CO'?'(Late)':pos==='UTG'||pos==='UTG+1'?'(Early)':''}</div>
+    <div class="section-label">${posLabel}</div>
     <div class="section-label" style="margin-top:10px">Your Hand</div>${cardsHTML(hand)}
     <div style="text-align:center;font-size:0.75em;color:${hand[0].suit===hand[1].suit?'var(--blue)':'var(--muted)'}">${hand[0].suit===hand[1].suit?'Suited':'Offsuit'}</div>
-    <div class="question">What's your move?</div>
+    <div class="question">${questionText}</div>
     <div class="options" style="max-width:360px;margin:10px auto;grid-template-columns:repeat(3,1fr)">
-      <button class="option-btn" onclick="answerPF('Raise')">Raise</button>
-      <button class="option-btn" onclick="answerPF('Call')">Call</button>
-      <button class="option-btn" onclick="answerPF('Fold')">Fold</button>
+      <button class="option-btn" onclick="answerPF('Raise')">${raiseBtn}</button>
+      <button class="option-btn" onclick="answerPF('Call')">${callBtn}</button>
+      <button class="option-btn" onclick="answerPF('Fold')">${foldBtn}</button>
     </div><div id="feedback"></div></div>`;
-  window._q={rec};
+  window._q={rec,raiseBtn,callBtn,foldBtn};
 }
 window.answerPF=function(a){
   const{rec}=window._q;const correct=a===rec.action;
   const close=(a==='Raise'&&rec.action==='Call')||(a==='Call'&&rec.action==='Raise');
   if(state.mode==='speed'){speedAnswer(correct||close);return}
   recordAnswer(correct||close,'preflop');
-  document.querySelectorAll('.option-btn').forEach(b=>{b.disabled=true;if(b.textContent===rec.action)b.classList.add('correct');if(b.textContent===a&&!correct&&!close)b.classList.add('wrong')});
+  document.querySelectorAll('.option-btn').forEach(b=>{
+    b.disabled=true;
+    const btnAction=b.textContent.replace(/ [💪🤝👋]/g,'').trim();
+    if(btnAction===rec.action)b.classList.add('correct');
+    if(btnAction===a&&!correct&&!close)b.classList.add('wrong');
+  });
   const fb=document.getElementById('feedback');
   const nextFn=state.mode==='dailyQuiz'?'quizNext()':'genPreflop()';
-  fb.innerHTML=`<div class="explanation ${correct||close?'explanation-correct':'explanation-wrong'}"><strong>${correct?'Correct!':close?'Acceptable!':'Wrong!'}</strong> Best: <strong>${rec.action}</strong> (${rec.cat})<br>${rec.why}${close?'<br><em>Both raise and call work here.</em>':''}</div>${!correct&&!close?'<div class="tip-box">Position is power! Late seats (CO = "cutoff", BTN = "button") act last post-flop, letting you play more hands. Early seats like UTG ("under the gun") should stick to premium hands.</div>':''}<button class="next-btn" onclick="${nextFn}">Next →</button>`;
+  const fbCorrect=correct?feedbackCorrect():close?(isKids()?'Close enough! 👍':'Acceptable!'):feedbackWrong();
+  fb.innerHTML=`<div class="explanation ${correct||close?'explanation-correct':'explanation-wrong'}"><strong>${fbCorrect}</strong> Best: <strong>${rec.action}</strong> (${rec.cat})<br>${rec.why}${close?'<br><em>Both raise and call work here.</em>':''}</div>${!correct&&!close?'<div class="tip-box">Position is power! Late seats (CO = "cutoff", BTN = "button") act last post-flop, letting you play more hands. Early seats like UTG ("under the gun") should stick to premium hands.</div>':''}<button class="next-btn" onclick="${nextFn}">${nextBtnText()}</button>`;
   setTimeout(()=>{const nb=fb.querySelector('.next-btn');if(nb){const r=nb.getBoundingClientRect();if(r.bottom>window.innerHeight)window.scrollBy({top:r.bottom-window.innerHeight+24,behavior:'smooth'})}},300);
 };
 
@@ -861,18 +1193,22 @@ const EQ_MATCHUPS=[
 function genEquity(){
   const tier=getSkillTier('equity');
   const mu=EQ_MATCHUPS[rand(EQ_MATCHUPS.length)];
-  const tol=tier===0?12:tier===1?8:5;
+  const tol=isKids()?12:(tier===0?12:tier===1?8:5);
+  const names=getPlayerNames();
+  const h1Label=isKids()?names[0]:'Hand 1';
+  const h2Label=isKids()?names[1]:'Hand 2';
+  const questionText=isKids()?`What's ${names[0]}'s chance of winning?`:'Hand 1\'s equity?';
   const area=document.getElementById('gameArea');
   area.innerHTML=`<div class="fade-in">${masteryBarHTML('equity')}
     <div style="display:flex;justify-content:center;gap:30px;margin:18px 0;flex-wrap:wrap">
-      <div style="text-align:center"><div class="section-label">Hand 1</div><div style="font-size:1.6em;font-weight:900;margin:6px 0">${mu.h1}</div></div>
+      <div style="text-align:center"><div class="section-label">${h1Label}</div><div style="font-size:1.6em;font-weight:900;margin:6px 0">${mu.h1}</div></div>
       <div style="align-self:center;color:var(--muted);font-weight:800;font-size:1.1em">vs</div>
-      <div style="text-align:center"><div class="section-label">Hand 2</div><div style="font-size:1.6em;font-weight:900;margin:6px 0">${mu.h2}</div></div>
+      <div style="text-align:center"><div class="section-label">${h2Label}</div><div style="font-size:1.6em;font-weight:900;margin:6px 0">${mu.h2}</div></div>
     </div>
-    <div class="question">Hand 1's equity?<br><small>Within ±${tol}% counts as correct</small></div>
+    <div class="question">${questionText}<br><small>Within ±${tol}% counts as correct</small></div>
     <div class="slider-container"><div class="slider-value" id="eqV">50</div><span style="color:var(--muted);font-size:0.75em">%</span>
     <input type="range" min="10" max="95" value="50" oninput="document.getElementById('eqV').textContent=this.value"></div>
-    <button class="submit-btn" onclick="answerEQ()">Submit</button>
+    <button class="submit-btn" onclick="answerEQ()">${isKids()?'Lock It In! 🔒':'Submit'}</button>
     <div id="feedback"></div></div>`;
   window._q={eq:mu.eq,explain:mu.explain,tol,h1:mu.h1,h2:mu.h2};
 }
@@ -880,74 +1216,80 @@ window.answerEQ=function(){
   const{eq,explain,tol}=window._q;const g=+document.getElementById('eqV').textContent;const d=Math.abs(g-eq);const correct=d<=tol;
   if(state.mode==='speed'){speedAnswer(correct);return}
   recordAnswer(correct,'equity');document.querySelector('.submit-btn').style.display='none';
-  const acc=d===0?'Spot on!':d<=5?'Excellent!':correct?'Close enough!':'Off the mark.';
+  const acc=correct?feedbackCorrect():feedbackWrong();
   const fb=document.getElementById('feedback');
   const nextFn=state.mode==='dailyQuiz'?'quizNext()':'genEquity()';
   fb.innerHTML=`<div class="explanation ${correct?'explanation-correct':'explanation-wrong'}"><strong>${acc}</strong> Answer: <strong>${eq}%</strong> (you: ${g}%, off by ${d})<br>${explain}
     <div class="tip-box">Key rules: Pair vs overs ≈ 55/45 · Pair vs underpair ≈ 80/20 · Domination ≈ 70/30 · Suited adds ~3%</div></div>
-    <button class="next-btn" onclick="${nextFn}">Next →</button>`;
+    <button class="next-btn" onclick="${nextFn}">${nextBtnText()}</button>`;
   setTimeout(()=>{const nb=fb.querySelector('.next-btn');if(nb){const r=nb.getBoundingClientRect();if(r.bottom>window.innerHeight)window.scrollBy({top:r.bottom-window.innerHeight+24,behavior:'smooth'})}},300);
 };
 
 // ===================== LINGO & ETIQUETTE =====================
 const LINGO_QS=[
-  // === TIER 0: Table Talk (basic terms) ===
-  {q:'What does "the flop" refer to?',opts:['The first 3 community cards','Your two hole cards','The final community card','The act of folding'],correct:0,tier:0,cat:'lingo',explain:'The flop is the first 3 community cards dealt face-up after the first betting round.'},
-  {q:'What does it mean to "check"?',opts:['Pass the action without betting','Fold your hand','Match someone\'s bet','Look at your cards again'],correct:0,tier:0,cat:'lingo',explain:'Checking means passing the action to the next player without putting money in. You can only check if no one has bet before you.'},
-  {q:'What are "hole cards"?',opts:['The 2 private cards dealt to each player','The community cards on the board','Cards that have been discarded','The cards in the deck'],correct:0,tier:0,cat:'lingo',explain:'Hole cards (or pocket cards) are the 2 face-down cards dealt only to you.'},
-  {q:'What is "the river"?',opts:['The 5th and final community card','The first community card','The discard pile','A side pot'],correct:0,tier:0,cat:'lingo',explain:'The river is the 5th community card, dealt after the turn. It\'s the last chance to improve your hand.'},
-  {q:'What does "all-in" mean?',opts:['Betting all your remaining chips','Folding every hand','Winning the tournament','Calling any bet'],correct:0,tier:0,cat:'lingo',explain:'Going all-in means putting every chip you have into the pot. You can\'t be forced out of the hand after that.'},
-  {q:'What are "blinds"?',opts:['Forced bets posted before cards are dealt','Cards dealt face-down','A type of poker hand','Side bets between players'],correct:0,tier:0,cat:'lingo',explain:'Blinds are mandatory bets posted by 2 players (small blind and big blind) before cards are dealt to stimulate action.'},
-  {q:'What does "the turn" mean?',opts:['The 4th community card','Your turn to act','Rotating the dealer button','Flipping your cards face up'],correct:0,tier:0,cat:'lingo',explain:'The turn (or 4th street) is the 4th community card dealt after the flop.'},
-  {q:'What does it mean to "muck" your hand?',opts:['Fold without showing your cards','Show your cards to everyone','Bet the maximum amount','Split the pot'],correct:0,tier:0,cat:'lingo',explain:'Mucking means discarding your hand face-down without revealing it to other players.'},
-  {q:'What is "the pot"?',opts:['All the chips bet in the current hand','The dealer\'s chip tray','Your chip stack','The buy-in amount'],correct:0,tier:0,cat:'lingo',explain:'The pot is the total amount of chips that have been bet by all players in the current hand. The winner takes it.'},
-  {q:'What does "fold" mean?',opts:['Give up your hand and forfeit your bets','Match someone\'s bet','Raise the bet','Show your cards'],correct:0,tier:0,cat:'lingo',explain:'Folding means surrendering your hand. You lose any chips you\'ve already put in, but you don\'t have to put in any more.'},
-  {q:'What is a "buy-in"?',opts:['The amount of money needed to enter a game','A forced bet','A type of bluff','The minimum raise amount'],correct:0,tier:0,cat:'lingo',explain:'The buy-in is the cost to enter a poker game or tournament. It determines your starting chip stack.'},
-  {q:'What does "heads-up" mean?',opts:['A hand or match with only 2 players','Looking at your cards','Raising preflop','Being first to act'],correct:0,tier:0,cat:'lingo',explain:'Heads-up means only two players are competing, either in a hand or an entire match format.'},
+  // === TIER 0: Table Talk (basic terms) === all kidSafe
+  {q:'What does "the flop" refer to?',opts:['The first 3 community cards','Your two hole cards','The final community card','The act of folding'],correct:0,tier:0,cat:'lingo',kidSafe:true,explain:'The flop is the first 3 community cards dealt face-up after the first betting round.'},
+  {q:'What does it mean to "check"?',opts:['Pass the action without betting','Fold your hand','Match someone\'s bet','Look at your cards again'],correct:0,tier:0,cat:'lingo',kidSafe:true,explain:'Checking means passing the action to the next player without putting money in. You can only check if no one has bet before you.'},
+  {q:'What are "hole cards"?',opts:['The 2 private cards dealt to each player','The community cards on the board','Cards that have been discarded','The cards in the deck'],correct:0,tier:0,cat:'lingo',kidSafe:true,explain:'Hole cards (or pocket cards) are the 2 face-down cards dealt only to you.'},
+  {q:'What is "the river"?',opts:['The 5th and final community card','The first community card','The discard pile','A side pot'],correct:0,tier:0,cat:'lingo',kidSafe:true,explain:'The river is the 5th community card, dealt after the turn. It\'s the last chance to improve your hand.'},
+  {q:'What does "all-in" mean?',opts:['Betting all your remaining chips','Folding every hand','Winning the tournament','Calling any bet'],correct:0,tier:0,cat:'lingo',kidSafe:true,explain:'Going all-in means putting every chip you have into the pot. You can\'t be forced out of the hand after that.'},
+  {q:'What are "blinds"?',opts:['Forced bets posted before cards are dealt','Cards dealt face-down','A type of poker hand','Side bets between players'],correct:0,tier:0,cat:'lingo',kidSafe:true,explain:'Blinds are mandatory bets posted by 2 players (small blind and big blind) before cards are dealt to stimulate action.'},
+  {q:'What does "the turn" mean?',opts:['The 4th community card','Your turn to act','Rotating the dealer button','Flipping your cards face up'],correct:0,tier:0,cat:'lingo',kidSafe:true,explain:'The turn (or 4th street) is the 4th community card dealt after the flop.'},
+  {q:'What does it mean to "muck" your hand?',opts:['Fold without showing your cards','Show your cards to everyone','Bet the maximum amount','Split the pot'],correct:0,tier:0,cat:'lingo',kidSafe:true,explain:'Mucking means discarding your hand face-down without revealing it to other players.'},
+  {q:'What is "the pot"?',opts:['All the chips bet in the current hand','The dealer\'s chip tray','Your chip stack','The buy-in amount'],correct:0,tier:0,cat:'lingo',kidSafe:true,explain:'The pot is the total amount of chips that have been bet by all players in the current hand. The winner takes it.'},
+  {q:'What does "fold" mean?',opts:['Give up your hand and forfeit your bets','Match someone\'s bet','Raise the bet','Show your cards'],correct:0,tier:0,cat:'lingo',kidSafe:true,explain:'Folding means surrendering your hand. You lose any chips you\'ve already put in, but you don\'t have to put in any more.'},
+  {q:'What is a "buy-in"?',opts:['The amount of money needed to enter a game','A forced bet','A type of bluff','The minimum raise amount'],correct:0,tier:0,cat:'lingo',kidSafe:true,explain:'The buy-in is the cost to enter a poker game or tournament. It determines your starting chip stack.'},
+  {q:'What does "heads-up" mean?',opts:['A hand or match with only 2 players','Looking at your cards','Raising preflop','Being first to act'],correct:0,tier:0,cat:'lingo',kidSafe:true,explain:'Heads-up means only two players are competing, either in a hand or an entire match format.'},
 
   // === TIER 1: Poker Speak (intermediate lingo + basic etiquette) ===
-  {q:'What does "the nuts" mean?',opts:['The best possible hand given the board','A pair of aces','Any full house','A lucky hand'],correct:0,tier:1,cat:'lingo',explain:'The nuts is the absolute best hand possible with the current community cards. It cannot be beaten.'},
-  {q:'What is a "suited connector"?',opts:['Two consecutive cards of the same suit','Any two suited cards','Two pairs on the board','A straight flush draw'],correct:0,tier:1,cat:'lingo',explain:'Suited connectors are consecutive-ranked cards of the same suit (like 7♥8♥). They have strong straight and flush potential.'},
-  {q:'What does "Under the Gun" (UTG) mean?',opts:['The first player to act preflop','The player with the most chips','The player on the button','The big blind'],correct:0,tier:1,cat:'lingo',explain:'UTG is the seat directly left of the big blind — the first to act preflop. It\'s the worst position since everyone acts after you.'},
-  {q:'What is a "continuation bet" (c-bet)?',opts:['A bet on the flop by the preflop raiser','Any bet after the river','Re-raising someone\'s raise','Checking then calling'],correct:0,tier:1,cat:'lingo',explain:'A c-bet is when the preflop aggressor bets again on the flop, continuing to represent strength regardless of whether the flop helped them.'},
-  {q:'What does it mean to be "on tilt"?',opts:['Playing emotionally after a bad beat','Being short-stacked','Having the best hand','Playing very tight'],correct:0,tier:1,cat:'lingo',explain:'Tilt is an emotional state where frustration causes a player to make poor decisions. It often happens after a bad beat or a series of losses.'},
-  {q:'What is "slow-playing"?',opts:['Underplaying a strong hand to trap opponents','Taking too long to act','Playing cautiously','Folding a strong hand'],correct:0,tier:1,cat:'lingo',explain:'Slow-playing means checking or betting small with a very strong hand to deceive opponents into thinking you\'re weak, hoping they\'ll bet more.'},
-  {q:'What does "drawing dead" mean?',opts:['Having no possible cards that can make you win','Having a very strong hand','Waiting for the river','Folding before the flop'],correct:0,tier:1,cat:'lingo',explain:'Drawing dead means no card on the next street(s) can give you the winning hand. Your opponent already has you beat no matter what comes.'},
-  {q:'What is a "donk bet"?',opts:['A bet by a non-aggressor leading into the preflop raiser','A very large bet','A bet with a bad hand','Betting out of turn'],correct:0,tier:1,cat:'lingo',explain:'A donk bet is when the player who didn\'t raise preflop leads out betting on the flop before the preflop raiser can act. It\'s called a "donk" bet but can be a legitimate strategy.'},
-  {q:'What does "position" mean in poker?',opts:['Where you sit relative to the dealer button','Your chip count ranking','Your hand strength','Your table image'],correct:0,tier:1,cat:'lingo',explain:'Position refers to when you act in a betting round. Late position (closer to the button) is advantageous because you see what others do first.'},
-  {q:'What is a "set" vs "trips"?',opts:['Set = pocket pair hits board; Trips = one card + board pair','They are the same thing','Set = 3 on board; Trips = one in hand','Set is in Omaha only'],correct:0,tier:1,cat:'lingo',explain:'A set is when you have a pocket pair and one more of that rank is on the board (stronger, more hidden). Trips is when you have one card matching a pair on the board (weaker, more obvious).'},
-  {q:'What does "villain" mean in poker?',opts:['Your opponent in a hand','A cheater','The worst player at the table','The tournament director'],correct:0,tier:1,cat:'lingo',explain:'In poker discussion, "villain" simply means your opponent. "Hero" refers to you. There\'s no negative connotation — it\'s just a way to discuss hands.'},
-  {q:'A player at the table has been waiting all night for premium hands. They\'re called a:',opts:['Nit','Shark','Fish','Whale'],correct:0,tier:1,cat:'lingo',explain:'A nit is an extremely tight player who only plays premium hands. They\'re predictable and rarely bluff.'},
+  {q:'What does "the nuts" mean?',opts:['The best possible hand given the board','A pair of aces','Any full house','A lucky hand'],correct:0,tier:1,cat:'lingo',kidSafe:true,explain:'The nuts is the absolute best hand possible with the current community cards. It cannot be beaten.'},
+  {q:'What is a "suited connector"?',opts:['Two consecutive cards of the same suit','Any two suited cards','Two pairs on the board','A straight flush draw'],correct:0,tier:1,cat:'lingo',kidSafe:false,explain:'Suited connectors are consecutive-ranked cards of the same suit (like 7♥8♥). They have strong straight and flush potential.'},
+  {q:'What does "Under the Gun" (UTG) mean?',opts:['The first player to act preflop','The player with the most chips','The player on the button','The big blind'],correct:0,tier:1,cat:'lingo',kidSafe:false,explain:'UTG is the seat directly left of the big blind — the first to act preflop. It\'s the worst position since everyone acts after you.'},
+  {q:'What is a "continuation bet" (c-bet)?',opts:['A bet on the flop by the preflop raiser','Any bet after the river','Re-raising someone\'s raise','Checking then calling'],correct:0,tier:1,cat:'lingo',kidSafe:false,explain:'A c-bet is when the preflop aggressor bets again on the flop, continuing to represent strength regardless of whether the flop helped them.'},
+  {q:'What does it mean to be "on tilt"?',opts:['Playing emotionally after a bad beat','Being short-stacked','Having the best hand','Playing very tight'],correct:0,tier:1,cat:'lingo',kidSafe:false,explain:'Tilt is an emotional state where frustration causes a player to make poor decisions. It often happens after a bad beat or a series of losses.'},
+  {q:'What is "slow-playing"?',opts:['Underplaying a strong hand to trap opponents','Taking too long to act','Playing cautiously','Folding a strong hand'],correct:0,tier:1,cat:'lingo',kidSafe:false,explain:'Slow-playing means checking or betting small with a very strong hand to deceive opponents into thinking you\'re weak, hoping they\'ll bet more.'},
+  {q:'What does "drawing dead" mean?',opts:['Having no possible cards that can make you win','Having a very strong hand','Waiting for the river','Folding before the flop'],correct:0,tier:1,cat:'lingo',kidSafe:false,explain:'Drawing dead means no card on the next street(s) can give you the winning hand. Your opponent already has you beat no matter what comes.'},
+  {q:'What is a "donk bet"?',opts:['A bet by a non-aggressor leading into the preflop raiser','A very large bet','A bet with a bad hand','Betting out of turn'],correct:0,tier:1,cat:'lingo',kidSafe:false,explain:'A donk bet is when the player who didn\'t raise preflop leads out betting on the flop before the preflop raiser can act. It\'s called a "donk" bet but can be a legitimate strategy.'},
+  {q:'What does "position" mean in poker?',opts:['Where you sit relative to the dealer button','Your chip count ranking','Your hand strength','Your table image'],correct:0,tier:1,cat:'lingo',kidSafe:true,explain:'Position refers to when you act in a betting round. Late position (closer to the button) is advantageous because you see what others do first.'},
+  {q:'What is a "set" vs "trips"?',opts:['Set = pocket pair hits board; Trips = one card + board pair','They are the same thing','Set = 3 on board; Trips = one in hand','Set is in Omaha only'],correct:0,tier:1,cat:'lingo',kidSafe:false,explain:'A set is when you have a pocket pair and one more of that rank is on the board (stronger, more hidden). Trips is when you have one card matching a pair on the board (weaker, more obvious).'},
+  {q:'What does "villain" mean in poker?',opts:['Your opponent in a hand','A cheater','The worst player at the table','The tournament director'],correct:0,tier:1,cat:'lingo',kidSafe:false,explain:'In poker discussion, "villain" simply means your opponent. "Hero" refers to you. There\'s no negative connotation — it\'s just a way to discuss hands.'},
+  {q:'A player at the table has been waiting all night for premium hands. They\'re called a:',opts:['Nit','Shark','Fish','Whale'],correct:0,tier:1,cat:'lingo',kidSafe:false,explain:'A nit is an extremely tight player who only plays premium hands. They\'re predictable and rarely bluff.'},
   // Basic etiquette in tier 1
-  {q:'You\'re about to fold but the player next to you hasn\'t acted yet. What\'s proper etiquette?',opts:['Wait for your turn before folding','Fold immediately to speed up play','Announce your fold verbally','Show your cards then fold'],correct:0,tier:1,cat:'etiquette',explain:'Always act in turn. Acting out of turn gives information to other players and is considered poor etiquette. Wait until the action reaches you.'},
-  {q:'You toss your chips toward the pot and they scatter everywhere. This is called:',opts:['Splashing the pot — don\'t do it','A power move','Showing confidence','A legal betting technique'],correct:0,tier:1,cat:'etiquette',explain:'Splashing the pot (tossing chips into the middle so they mix with other bets) makes it impossible to verify the bet amount. Place your chips neatly in front of you.'},
-  {q:'You folded your hand earlier, but it would have made a flush on the river. Should you say something?',opts:['No — never reveal info about folded cards during a hand','Yes — tell everyone what you had','Only tell the person next to you','Wait until someone asks'],correct:0,tier:1,cat:'etiquette',explain:'Never discuss folded cards while a hand is still in play. It gives unfair information to remaining players about what cards are dead. You can discuss after the hand ends.'},
+  {q:'You\'re about to fold but the player next to you hasn\'t acted yet. What\'s proper etiquette?',opts:['Wait for your turn before folding','Fold immediately to speed up play','Announce your fold verbally','Show your cards then fold'],correct:0,tier:1,cat:'etiquette',kidSafe:false,explain:'Always act in turn. Acting out of turn gives information to other players and is considered poor etiquette. Wait until the action reaches you.'},
+  {q:'You toss your chips toward the pot and they scatter everywhere. This is called:',opts:['Splashing the pot — don\'t do it','A power move','Showing confidence','A legal betting technique'],correct:0,tier:1,cat:'etiquette',kidSafe:false,explain:'Splashing the pot (tossing chips into the middle so they mix with other bets) makes it impossible to verify the bet amount. Place your chips neatly in front of you.'},
+  {q:'You folded your hand earlier, but it would have made a flush on the river. Should you say something?',opts:['No — never reveal info about folded cards during a hand','Yes — tell everyone what you had','Only tell the person next to you','Wait until someone asks'],correct:0,tier:1,cat:'etiquette',kidSafe:false,explain:'Never discuss folded cards while a hand is still in play. It gives unfair information to remaining players about what cards are dead. You can discuss after the hand ends.'},
 
   // === TIER 2: Pro Moves (advanced terms + etiquette scenarios) ===
-  {q:'What is a "string bet"?',opts:['Putting out chips in multiple motions without verbal declaration','A very large bet','Betting on multiple streets in a row','A bet made with string chips'],correct:0,tier:2,cat:'etiquette',explain:'A string bet is when you don\'t verbally declare your raise and put chips out in two or more motions — like calling then reaching back for more chips to raise. It\'s illegal because it can be used to read opponents\' reactions. Always announce "raise" verbally first.'},
-  {q:'What is "angle shooting"?',opts:['Using deceptive but technically legal tactics to gain an edge','Bluffing on the river','Making a large overbet','Playing out of position'],correct:0,tier:2,cat:'etiquette',explain:'Angle shooting is using unethical but technically legal tricks to gain an unfair advantage — like ambiguous chip movements, fake folds, or misleading statements. It\'s heavily frowned upon and can get you banned.'},
-  {q:'What does "slow-rolling" mean, and why is it bad?',opts:['Deliberately delaying to show the winning hand — it\'s disrespectful','Playing slowly to tilt opponents — it\'s boring','Rolling dice slowly — it\'s superstitious','Betting small with a big hand — it\'s deceptive'],correct:0,tier:2,cat:'etiquette',explain:'Slow-rolling is waiting an unnecessarily long time before revealing the winning hand at showdown, letting your opponent think they\'ve won. It\'s considered the biggest breach of poker etiquette — never do it.'},
-  {q:'What does "GTO" stand for?',opts:['Game Theory Optimal','Get The Odds','Going To Out-play','Grand Total Outs'],correct:0,tier:2,cat:'lingo',explain:'GTO (Game Theory Optimal) is a mathematically balanced strategy that cannot be exploited. It involves mixing value bets and bluffs at precise frequencies.'},
-  {q:'What is "ICM" in tournament poker?',opts:['Independent Chip Model — chip value based on payout structure','International Card Masters','In-hand Card Mechanics','Incremental Chip Movement'],correct:0,tier:2,cat:'lingo',explain:'ICM calculates the real-money value of your tournament chips based on payout structure and stack sizes. A chip gained is worth less than a chip lost near the money bubble.'},
-  {q:'What is a "bluff catcher"?',opts:['A hand that only beats bluffs, not value bets','A technique to detect bluffing','A player who always calls','The security camera at the table'],correct:0,tier:2,cat:'lingo',explain:'A bluff catcher is a medium-strength hand that beats your opponent\'s bluffs but loses to their value betting range. Deciding when to call with a bluff catcher is one of poker\'s hardest skills.'},
-  {q:'What does "table image" mean?',opts:['How other players perceive your playing style','The design on the felt','Your seat at the table','Your chip stack size'],correct:0,tier:2,cat:'lingo',explain:'Table image is the perception other players have of you based on how you\'ve been playing. A tight image lets you bluff more; a loose image gets you paid off more with strong hands.'},
-  {q:'What is a "range" in poker strategy?',opts:['All the possible hands a player could have in a situation','The distance between your seat and the dealer','The difference between the high and low card','Your betting limits'],correct:0,tier:2,cat:'lingo',explain:'A range is the complete set of hands a player could hold based on their actions. Good players think about opponent ranges rather than trying to put them on a single hand.'},
-  {q:'What is a "value bet"?',opts:['A bet made with a strong hand hoping to be called by a worse hand','A very small bet','A bet that offers good pot odds','The minimum bet allowed'],correct:0,tier:2,cat:'lingo',explain:'A value bet is when you bet with a hand you believe is best, hoping your opponent will call with a weaker hand. The key is sizing it so they\'re tempted to call.'},
-  {q:'What does "LAG" and "TAG" stand for?',opts:['Loose-Aggressive and Tight-Aggressive playing styles','Large And Growing / Tight And Grinding','Last Action Given / Turn Action Given','Low Ante Game / Tournament Ante Game'],correct:0,tier:2,cat:'lingo',explain:'LAG = Loose-Aggressive (plays many hands, bets hard). TAG = Tight-Aggressive (plays fewer hands, but bets hard when they play). TAG is considered the best starting style.'},
-  {q:'What does "a wet board" mean?',opts:['A board with many draw possibilities (straights, flushes)','A board with all low cards','A board with no community cards yet','A board that favors the big blind'],correct:0,tier:2,cat:'lingo',explain:'A wet board has coordinated cards offering many drawing possibilities (like 8♥ 9♥ T♠). A "dry" board has disconnected, unsuited cards (like K♠ 7♦ 2♣).'},
-  {q:'What is a "cooler" in poker?',opts:['A hand where both players have very strong hands and a big pot is unavoidable','A bad bluff','When a new player wins immediately','A cold streak of bad cards'],correct:0,tier:2,cat:'lingo',explain:'A cooler is when two players both have extremely strong hands (like AA vs KK or set over set). No one played badly — the big loss was unavoidable.'},
-  {q:'"Show one, show all" is a rule that means:',opts:['If you show your cards to one player, all players can see them','You must show one card at showdown','Everyone must show both cards','The winner must show their hand'],correct:0,tier:2,cat:'etiquette',explain:'"Show one, show all" prevents selective information sharing. If you choose to show your hand to one player, any player at the table can request to see it.'},
-  {q:'A player at the table is on their phone during a hand and delays the game. What\'s the right response?',opts:['Politely ask them to pay attention or call the floor','Peek at their cards while they\'re distracted','Skip their action and move on','Loudly criticize them'],correct:0,tier:2,cat:'etiquette',explain:'Being on your phone and slowing down the game is poor etiquette. A polite reminder is fine; if it continues, ask the dealer or floor manager to address it.'},
-  {q:'You just won a huge pot with a lucky river card. What\'s proper etiquette?',opts:['Collect your chips quietly without excessive celebration','Stand up and cheer loudly','Lecture your opponent on their play','Immediately show the table your hand'],correct:0,tier:2,cat:'etiquette',explain:'Be gracious in victory. Excessive celebration after a lucky win (especially a bad beat on your opponent) is considered poor form. A simple "nice hand" to your opponent goes a long way.'},
-  {q:'You think a player at the table is cheating. What should you do?',opts:['Quietly notify the floor manager or dealer','Confront them loudly at the table','Accuse them and refuse to play','Post about it on social media'],correct:0,tier:2,cat:'etiquette',explain:'If you suspect cheating, discreetly alert the floor manager or dealer. Making a scene can cause problems and embarrassment if you\'re wrong. Let the professionals handle it.'},
-  {q:'What does it mean to "protect your cards"?',opts:['Keep a chip or card guard on your hand so they aren\'t accidentally mucked','Hide your cards from the dealer','Never show your hand at showdown','Fold to protect your chip stack'],correct:0,tier:2,cat:'etiquette',explain:'Place a chip or card protector on top of your hole cards. If your unprotected cards are accidentally swept into the muck by the dealer, your hand is dead — no exceptions.'},
-  {q:'Should you tip the dealer after winning a pot?',opts:['Yes — it\'s customary in most live games','No — dealers are paid by the casino','Only in tournaments','Only if the pot is very large'],correct:0,tier:2,cat:'etiquette',explain:'Tipping the dealer after winning a pot is standard etiquette in live cash games (usually $1-2 per pot). Dealers rely on tips for a significant portion of their income. In tournaments, a portion of the buy-in typically goes to dealers.'},
+  {q:'What is a "string bet"?',opts:['Putting out chips in multiple motions without verbal declaration','A very large bet','Betting on multiple streets in a row','A bet made with string chips'],correct:0,tier:2,cat:'etiquette',kidSafe:false,explain:'A string bet is when you don\'t verbally declare your raise and put chips out in two or more motions — like calling then reaching back for more chips to raise. It\'s illegal because it can be used to read opponents\' reactions. Always announce "raise" verbally first.'},
+  {q:'What is "angle shooting"?',opts:['Using deceptive but technically legal tactics to gain an edge','Bluffing on the river','Making a large overbet','Playing out of position'],correct:0,tier:2,cat:'etiquette',kidSafe:false,explain:'Angle shooting is using unethical but technically legal tricks to gain an unfair advantage — like ambiguous chip movements, fake folds, or misleading statements. It\'s heavily frowned upon and can get you banned.'},
+  {q:'What does "slow-rolling" mean, and why is it bad?',opts:['Deliberately delaying to show the winning hand — it\'s disrespectful','Playing slowly to tilt opponents — it\'s boring','Rolling dice slowly — it\'s superstitious','Betting small with a big hand — it\'s deceptive'],correct:0,tier:2,cat:'etiquette',kidSafe:false,explain:'Slow-rolling is waiting an unnecessarily long time before revealing the winning hand at showdown, letting your opponent think they\'ve won. It\'s considered the biggest breach of poker etiquette — never do it.'},
+  {q:'What does "GTO" stand for?',opts:['Game Theory Optimal','Get The Odds','Going To Out-play','Grand Total Outs'],correct:0,tier:2,cat:'lingo',kidSafe:false,explain:'GTO (Game Theory Optimal) is a mathematically balanced strategy that cannot be exploited. It involves mixing value bets and bluffs at precise frequencies.'},
+  {q:'What is "ICM" in tournament poker?',opts:['Independent Chip Model — chip value based on payout structure','International Card Masters','In-hand Card Mechanics','Incremental Chip Movement'],correct:0,tier:2,cat:'lingo',kidSafe:false,explain:'ICM calculates the real-money value of your tournament chips based on payout structure and stack sizes. A chip gained is worth less than a chip lost near the money bubble.'},
+  {q:'What is a "bluff catcher"?',opts:['A hand that only beats bluffs, not value bets','A technique to detect bluffing','A player who always calls','The security camera at the table'],correct:0,tier:2,cat:'lingo',kidSafe:false,explain:'A bluff catcher is a medium-strength hand that beats your opponent\'s bluffs but loses to their value betting range. Deciding when to call with a bluff catcher is one of poker\'s hardest skills.'},
+  {q:'What does "table image" mean?',opts:['How other players perceive your playing style','The design on the felt','Your seat at the table','Your chip stack size'],correct:0,tier:2,cat:'lingo',kidSafe:false,explain:'Table image is the perception other players have of you based on how you\'ve been playing. A tight image lets you bluff more; a loose image gets you paid off more with strong hands.'},
+  {q:'What is a "range" in poker strategy?',opts:['All the possible hands a player could have in a situation','The distance between your seat and the dealer','The difference between the high and low card','Your betting limits'],correct:0,tier:2,cat:'lingo',kidSafe:false,explain:'A range is the complete set of hands a player could hold based on their actions. Good players think about opponent ranges rather than trying to put them on a single hand.'},
+  {q:'What is a "value bet"?',opts:['A bet made with a strong hand hoping to be called by a worse hand','A very small bet','A bet that offers good pot odds','The minimum bet allowed'],correct:0,tier:2,cat:'lingo',kidSafe:false,explain:'A value bet is when you bet with a hand you believe is best, hoping your opponent will call with a weaker hand. The key is sizing it so they\'re tempted to call.'},
+  {q:'What does "LAG" and "TAG" stand for?',opts:['Loose-Aggressive and Tight-Aggressive playing styles','Large And Growing / Tight And Grinding','Last Action Given / Turn Action Given','Low Ante Game / Tournament Ante Game'],correct:0,tier:2,cat:'lingo',kidSafe:false,explain:'LAG = Loose-Aggressive (plays many hands, bets hard). TAG = Tight-Aggressive (plays fewer hands, but bets hard when they play). TAG is considered the best starting style.'},
+  {q:'What does "a wet board" mean?',opts:['A board with many draw possibilities (straights, flushes)','A board with all low cards','A board with no community cards yet','A board that favors the big blind'],correct:0,tier:2,cat:'lingo',kidSafe:false,explain:'A wet board has coordinated cards offering many drawing possibilities (like 8♥ 9♥ T♠). A "dry" board has disconnected, unsuited cards (like K♠ 7♦ 2♣).'},
+  {q:'What is a "cooler" in poker?',opts:['A hand where both players have very strong hands and a big pot is unavoidable','A bad bluff','When a new player wins immediately','A cold streak of bad cards'],correct:0,tier:2,cat:'lingo',kidSafe:false,explain:'A cooler is when two players both have extremely strong hands (like AA vs KK or set over set). No one played badly — the big loss was unavoidable.'},
+  {q:'"Show one, show all" is a rule that means:',opts:['If you show your cards to one player, all players can see them','You must show one card at showdown','Everyone must show both cards','The winner must show their hand'],correct:0,tier:2,cat:'etiquette',kidSafe:false,explain:'"Show one, show all" prevents selective information sharing. If you choose to show your hand to one player, any player at the table can request to see it.'},
+  {q:'A player at the table is on their phone during a hand and delays the game. What\'s the right response?',opts:['Politely ask them to pay attention or call the floor','Peek at their cards while they\'re distracted','Skip their action and move on','Loudly criticize them'],correct:0,tier:2,cat:'etiquette',kidSafe:false,explain:'Being on your phone and slowing down the game is poor etiquette. A polite reminder is fine; if it continues, ask the dealer or floor manager to address it.'},
+  {q:'You just won a huge pot with a lucky river card. What\'s proper etiquette?',opts:['Collect your chips quietly without excessive celebration','Stand up and cheer loudly','Lecture your opponent on their play','Immediately show the table your hand'],correct:0,tier:2,cat:'etiquette',kidSafe:false,explain:'Be gracious in victory. Excessive celebration after a lucky win (especially a bad beat on your opponent) is considered poor form. A simple "nice hand" to your opponent goes a long way.'},
+  {q:'You think a player at the table is cheating. What should you do?',opts:['Quietly notify the floor manager or dealer','Confront them loudly at the table','Accuse them and refuse to play','Post about it on social media'],correct:0,tier:2,cat:'etiquette',kidSafe:false,explain:'If you suspect cheating, discreetly alert the floor manager or dealer. Making a scene can cause problems and embarrassment if you\'re wrong. Let the professionals handle it.'},
+  {q:'What does it mean to "protect your cards"?',opts:['Keep a chip or card guard on your hand so they aren\'t accidentally mucked','Hide your cards from the dealer','Never show your hand at showdown','Fold to protect your chip stack'],correct:0,tier:2,cat:'etiquette',kidSafe:false,explain:'Place a chip or card protector on top of your hole cards. If your unprotected cards are accidentally swept into the muck by the dealer, your hand is dead — no exceptions.'},
+  {q:'Should you tip the dealer after winning a pot?',opts:['Yes — it\'s customary in most live games','No — dealers are paid by the casino','Only in tournaments','Only if the pot is very large'],correct:0,tier:2,cat:'etiquette',kidSafe:false,explain:'Tipping the dealer after winning a pot is standard etiquette in live cash games (usually $1-2 per pot). Dealers rely on tips for a significant portion of their income. In tournaments, a portion of the buy-in typically goes to dealers.'},
 ];
 
 function genLingo(){
   const tier=getSkillTier('lingo');
-  // Include questions from current tier and below for review
-  const pool=LINGO_QS.filter(q=>q.tier<=tier);
+  // In kids mode: only kidSafe questions from tier 0-1, exclude casino etiquette
+  let pool;
+  if(isKids()){
+    pool=LINGO_QS.filter(q=>q.kidSafe&&q.tier<=1&&q.cat!=='etiquette');
+  } else {
+    pool=LINGO_QS.filter(q=>q.tier<=tier);
+  }
+  if(pool.length===0)pool=LINGO_QS.filter(q=>q.tier===0); // fallback
   const q=pool[rand(pool.length)];
   // Shuffle options but track correct answer
   const indices=[0,1,2,3];
@@ -977,27 +1319,41 @@ window.answerLingo=function(idx){
   });
   const icon=cat==='etiquette'?'🤝':'📖';
   const fb=document.getElementById('feedback');
-  fb.innerHTML=`<div class="explanation ${isCorrect?'explanation-correct':'explanation-wrong'}"><strong>${isCorrect?'Correct!':'Wrong!'}</strong> ${icon} ${explain}</div><button class="next-btn" onclick="${state.mode==='dailyQuiz'?'quizNext()':'genLingo()'}">Next →</button>`;
+  fb.innerHTML=`<div class="explanation ${isCorrect?'explanation-correct':'explanation-wrong'}"><strong>${isCorrect?feedbackCorrect():feedbackWrong()}</strong> ${icon} ${explain}</div><button class="next-btn" onclick="${state.mode==='dailyQuiz'?'quizNext()':'genLingo()'}">Next →</button>`;
+  fb.querySelector('.next-btn').textContent=nextBtnText();
   setTimeout(()=>{const nb=fb.querySelector('.next-btn');if(nb){const r=nb.getBoundingClientRect();if(r.bottom>window.innerHeight)window.scrollBy({top:r.bottom-window.innerHeight+24,behavior:'smooth'})}},300);
 };
 
 // ===================== NAV =====================
 function showIntro(){
+  const mw=getMasteryWindow(),mt=getMasteryThreshold();
   const hasUnlocked=SKILLS.filter((_,i)=>isSkillUnlocked(i)).length;
   const hasMastered=SKILLS.some(sk=>isMastered(getSkillState(sk.id).history));
   const hasDaily=state.dailyHistory&&state.dailyHistory.length>0;
+  const playerName=state.name||'Player';
+
+  let introTitle,introText,introNote;
+  if(isKids()){
+    introTitle=`Let's Play Cards, ${playerName}! 🃏`;
+    introText=`Learn poker one step at a time! 🌟 Get <strong>${mt}/${mw}</strong> right to unlock new skills. You got this! 💪`;
+    introNote='Have fun and learn! 🎉';
+  } else {
+    introTitle='Learn Poker by Doing';
+    introText=`Each skill unlocks when you <strong>prove mastery</strong> of the previous one. Get ${mt}/${mw} correct in your recent attempts to advance.`;
+    introNote='No grinding — just skill.';
+  }
+
   document.getElementById('gameArea').innerHTML=`<div class="intro fade-in">
-    <h2>Learn Poker by Doing</h2>
-    <p>Each skill unlocks when you <strong>prove mastery</strong> of the previous one.
-    Get ${MASTERY_THRESHOLD}/${MASTERY_WINDOW} correct in your recent attempts to advance.</p>
-    <p style="color:var(--amber);font-size:0.8em">No grinding — just skill.</p>
+    <h2>${introTitle}</h2>
+    <p>${introText}</p>
+    <p style="color:var(--amber);font-size:0.8em">${introNote}</p>
     <button class="start-btn" onclick="setMode('${state.mode||'handRank'}')">Start Training</button>
     ${hasUnlocked>=2?`<div class="nav-btns">
       <button class="nav-btn daily" onclick="startDailyQuiz()"><span class="nav-icon">📋</span> Daily Quiz</button>
       <button class="nav-btn progress" onclick="showProgress()"><span class="nav-icon">📈</span> Progress</button>
       ${hasMastered?'<button class="nav-btn speed" onclick="pickSpeedSkill()"><span class="nav-icon">⚡</span> Speed Round</button>':''}
     </div>`:''}
-    <br><button class="reset-btn" onclick="if(confirm('Reset all progress?')){localStorage.removeItem('pokerTrainer2');location.reload()}">Reset Progress</button>
+    <br><button class="reset-btn" onclick="if(confirm('Reset all progress for ${playerName}?')){const ps=getProfiles();const idx=ps.findIndex(p=>p.id===state.id);if(idx>=0){const fresh=defaultState();Object.assign(ps[idx],fresh);saveProfiles(ps);Object.assign(state,fresh);state.id=ps[idx].id;state.name=ps[idx].name;state.kidsMode=ps[idx].kidsMode;save();renderStatsBar();renderSkillPath();showIntro()}}">Reset Progress</button>
   </div>`;
 }
 
@@ -1017,14 +1373,15 @@ function getUnlockedSkills(){return SKILLS.filter((_,i)=>isSkillUnlocked(i))}
 function startDailyQuiz(){
   const unlocked=getUnlockedSkills();
   if(unlocked.length<1)return;
-  const perSkill=Math.max(1,Math.floor(10/unlocked.length));
+  const totalQ=isKids()?6:10;
+  const perSkill=Math.max(1,Math.floor(totalQ/unlocked.length));
   const questions=[];
   const skillOrder=shuffle([...unlocked]);
   for(const sk of skillOrder){
-    const count=questions.length+perSkill>10?10-questions.length:perSkill;
-    for(let i=0;i<count&&questions.length<10;i++) questions.push({skillId:sk.id,skillName:sk.name,skillIcon:sk.icon});
+    const count=questions.length+perSkill>totalQ?totalQ-questions.length:perSkill;
+    for(let i=0;i<count&&questions.length<totalQ;i++) questions.push({skillId:sk.id,skillName:sk.name,skillIcon:sk.icon});
   }
-  while(questions.length<10){
+  while(questions.length<totalQ){
     const sk=unlocked[rand(unlocked.length)];
     questions.push({skillId:sk.id,skillName:sk.name,skillIcon:sk.icon});
   }
@@ -1055,7 +1412,7 @@ function renderQuizQuestion(){
     // Remove mastery bar (not relevant in quiz mode)
     const mb=container.querySelector('.mastery-progress');if(mb)mb.remove();
     const headerHTML=`<div class="quiz-header">
-      <span class="quiz-step">Q${quizState.current+1}/10</span>
+      <span class="quiz-step">Q${quizState.current+1}/${quizState.questions.length}</span>
       <div class="quiz-bar"><div class="quiz-bar-fill" style="width:${pct}%"></div></div>
       <span style="font-size:0.75em;color:var(--muted)">${quizState.answers.filter(Boolean).length}✓</span>
     </div><div class="quiz-skill-tag">${q.skillIcon} ${q.skillName}</div>`;
@@ -1085,7 +1442,8 @@ function showQuizResults(){
   const score=quizState.answers.filter(Boolean).length;
   const total=quizState.answers.length;
   const pct=total?Math.round(score/total*100):0;
-  const color=score>=8?'var(--green)':score>=5?'var(--amber)':'var(--red)';
+  const pctScore=total?score/total:0;
+  const color=pctScore>=0.8?'var(--green)':pctScore>=0.5?'var(--amber)':'var(--red)';
 
   // Save to history
   const today=new Date().toISOString().slice(0,10);
@@ -1094,7 +1452,7 @@ function showQuizResults(){
   state.mode=null;save();
 
   const r=52,circ=2*Math.PI*r;
-  const offset=circ*(1-score/10);
+  const offset=circ*(1-pctScore);
 
   let breakdownHTML='';
   for(const sk of getUnlockedSkills()){
@@ -1119,7 +1477,7 @@ function showQuizResults(){
       <svg viewBox="0 0 120 120"><circle class="sr-bg" cx="60" cy="60" r="${r}"/><circle class="sr-fill" cx="60" cy="60" r="${r}" stroke="${color}" stroke-width="6" stroke-linecap="round" fill="none" stroke-dasharray="${circ}" stroke-dashoffset="${offset}"/></svg>
       <div class="sr-text"><span class="sr-num" style="color:${color}">${score}</span><span class="sr-label">out of ${total}</span></div>
     </div>
-    <p style="color:var(--muted);font-size:0.85em">${score>=9?'Outstanding! 🏆':score>=7?'Great job! 💪':score>=5?'Getting there! 📚':'Keep practicing! 🎯'}</p>
+    <p style="color:var(--muted);font-size:0.85em">${pctScore>=0.9?'Outstanding! 🏆':pctScore>=0.7?'Great job! 💪':pctScore>=0.5?'Getting there! 📚':'Keep practicing! 🎯'}</p>
     <div class="skill-breakdown">${breakdownHTML}</div>
     <div class="nav-btns">
       <button class="nav-btn daily" onclick="startDailyQuiz()"><span class="nav-icon">🔄</span> Retake</button>
@@ -1269,7 +1627,8 @@ function drawChart(hist){
 let speedState=null; // {skillId, timer, correct, total, interval, startTime}
 
 function pickSpeedSkill(){
-  const mastered=SKILLS.filter(sk=>isMastered(getSkillState(sk.id).history)||getSkillState(sk.id).tierHistory[0].length>=MASTERY_WINDOW);
+  const mw=getMasteryWindow();
+  const mastered=SKILLS.filter(sk=>isMastered(getSkillState(sk.id).history)||getSkillState(sk.id).tierHistory[0].length>=mw);
   if(mastered.length===0){
     showToast('Master at least one skill first!','streak');return;
   }
@@ -1279,9 +1638,10 @@ function pickSpeedSkill(){
     return sk?`<div class="skill-row"><span class="sr-icon">${sk.icon}</span><span class="sr-name">${sk.name}</span><span class="sr-score" style="color:var(--green)">${b.score}/${b.total}</span></div>`:'';
   }).join('');
 
+  const speedTime=isKids()?45:60;
   area.innerHTML=`<div class="fade-in" style="text-align:center">
     <h2>⚡ Speed Round</h2>
-    <p style="color:var(--muted);font-size:0.85em;margin:8px 0 16px">60 seconds. No explanations. How fast can you think?</p>
+    <p style="color:var(--muted);font-size:0.85em;margin:8px 0 16px">${speedTime} seconds. No explanations. How fast can you think?</p>
     <div class="options" style="grid-template-columns:1fr">
       ${mastered.map(sk=>`<button class="option-btn" onclick="startSpeedRound('${sk.id}')" style="text-align:left;display:flex;align-items:center;gap:10px">
         <span style="font-size:1.2em">${sk.icon}</span> ${sk.name}
@@ -1294,7 +1654,8 @@ function pickSpeedSkill(){
 }
 
 function startSpeedRound(skillId){
-  speedState={skillId,correct:0,total:0,timeLeft:60};
+  const speedTime=isKids()?45:60;
+  speedState={skillId,correct:0,total:0,timeLeft:speedTime};
   state.mode='speed';save();renderSkillPath();
   renderSpeedQuestion();
   speedState.interval=setInterval(()=>{
@@ -1363,9 +1724,9 @@ function showSpeedResults(){
   const area=document.getElementById('gameArea');
   area.innerHTML=`<div class="speed-results fade-in">
     <h2>⚡ Speed Round Complete!</h2>
-    <p class="sr-sub">${sk.icon} ${sk.name} · 60 seconds</p>
+    <p class="sr-sub">${sk.icon} ${sk.name} · ${isKids()?45:60} seconds</p>
     <div class="sr-big" style="color:${color}">${correct}<span style="font-size:0.4em;color:var(--muted)">/${total}</span></div>
-    <p style="color:var(--muted);font-size:0.85em">${acc}% accuracy · ${(correct/60*60).toFixed(1)} correct/min</p>
+    <p style="color:var(--muted);font-size:0.85em">${acc}% accuracy · ${(correct/(isKids()?45:60)*60).toFixed(1)} correct/min</p>
     ${isNewRecord?'<p class="sr-record">🏆 New Personal Best!</p>':''}
     ${prev&&!isNewRecord?`<p class="sr-record">Record: ${prev.score}/${prev.total}</p>`:''}
     <div class="nav-btns" style="margin-top:20px">
@@ -1381,11 +1742,19 @@ function showSpeedResults(){
 // Ensure state has new fields
 if(!state.dailyHistory)state.dailyHistory=[];
 if(!state.speedBests)state.speedBests={};
-save();
 
-renderStatsBar();renderSkillPath();
-if(state.mode&&state.mode!=='dailyQuiz'&&state.mode!=='speed'){const idx=SKILLS.findIndex(s=>s.id===state.mode);if(isSkillUnlocked(idx))setMode(state.mode);else showIntro();}
-else showIntro();
+if(state.id){
+  // Existing profile — normal boot
+  applyKidsMode();
+  renderProfileSwitch();
+  save();
+  renderStatsBar();renderSkillPath();
+  if(state.mode&&state.mode!=='dailyQuiz'&&state.mode!=='speed'){const idx=SKILLS.findIndex(s=>s.id===state.mode);if(isSkillUnlocked(idx))setMode(state.mode);else showIntro();}
+  else showIntro();
+} else {
+  // No profile — show profile picker
+  showProfilePicker();
+}
 </script>
 </body>
 </html>
